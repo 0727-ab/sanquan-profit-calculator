@@ -1,0 +1,7 @@
+node_modules/
+*.xlsx
+!docs/*.xlsx
+expected.json
+lo/
+*.png
+__pycache__/

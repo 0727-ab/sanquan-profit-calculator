@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>三全利润与人工测算器</title>
+<style>
+:root{
+  --bg:#f4f4f2; --card:#ffffff; --line:#e3e2de; --line2:#d3d2cc;
+  --t1:#1b1b1a; --t2:#52514e; --t3:#8a8984;
+  --base:#2a78d6; --promo:#eb6834; --up:#1baf7a; --dec:#b9b8b1; --neg:#e34948;
+  --input:#fffaf0; --focus:#2a78d6;
+  --good:#0f7b45; --warn:#a15c00; --bad:#c22f2e; --info:#1c5cab;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--t1);font:14px/1.5 "Microsoft YaHei","PingFang SC","Segoe UI",sans-serif}
+button,input,select{font:inherit;color:inherit}
+header{display:flex;align-items:center;gap:16px;padding:12px 20px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+header h1{font-size:17px;margin:0;font-weight:700;white-space:nowrap}
+header .meta{display:flex;gap:8px;color:var(--t2);font-size:13px}
+header .meta input{border:1px solid transparent;background:transparent;padding:2px 6px;border-radius:6px;width:120px}
+header .meta input:hover,header .meta input:focus{border-color:var(--line2);background:#fff;outline:none}
+header .grow{flex:1}
+.btn{border:1px solid var(--line2);background:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;white-space:nowrap}
+.btn:hover{background:#f6f6f4}
+.btn.primary{background:var(--base);border-color:var(--base);color:#fff;font-weight:600}
+.btn.primary:hover{background:#256abf}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.on:disabled{opacity:1;border-color:var(--base);color:var(--base);background:#eef4fc;font-weight:600}
+.btn.small{padding:3px 9px;font-size:12.5px;border-radius:6px}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--t2)}
+.btn.ghost:hover{background:#efefec}
+nav.tabs{display:flex;gap:4px;padding:0 20px;background:var(--card);border-bottom:1px solid var(--line)}
+nav.tabs button{border:none;background:none;padding:10px 14px;cursor:pointer;color:var(--t2);border-bottom:2px solid transparent;font-weight:600}
+nav.tabs button.on{color:var(--t1);border-bottom-color:var(--base)}
+main{padding:16px 20px 40px;max-width:1440px;margin:0 auto}
+.page{display:none}.page.on{display:block}
+.skus{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.chip{border:1px solid var(--line2);background:#fff;border-radius:999px;padding:5px 14px;cursor:pointer}
+.chip.on{background:var(--t1);color:#fff;border-color:var(--t1)}
+.layout{display:grid;grid-template-columns:minmax(380px,460px) 1fr;gap:16px;align-items:start}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+.card h2{font-size:15px;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+.card h2 .sub{font-weight:400;color:var(--t3);font-size:12.5px}
+.hint{color:var(--t3);font-size:12.5px}
+table.inp{width:100%;border-collapse:collapse}
+table.inp th{font-size:12.5px;color:var(--t2);font-weight:600;text-align:left;padding:4px 4px 6px;border-bottom:1px solid var(--line)}
+table.inp th.b{color:var(--base)} table.inp th.p{color:var(--promo)}
+table.inp td{padding:4px;vertical-align:middle;border-bottom:1px solid #f0efec}
+table.inp td.lab{color:var(--t2);white-space:nowrap;font-size:13.5px}
+table.inp td.lab small{color:var(--t3)}
+.num{width:100%;border:1px solid var(--line2);background:var(--input);border-radius:6px;padding:5px 7px;text-align:right;font-variant-numeric:tabular-nums}
+.num:focus,.txt:focus,select:focus{outline:2px solid var(--focus);outline-offset:-1px;background:#fff}
+.num.miss{border-color:var(--neg);background:#fff3f3}
+.num.ro{background:#f3f3f1;color:var(--t2)}
+.txt{width:100%;border:1px solid var(--line2);background:#fff;border-radius:6px;padding:5px 7px}
+select{border:1px solid var(--line2);background:#fff;border-radius:6px;padding:4px 6px}
+.est{font-size:11.5px;color:var(--t3);display:inline-flex;align-items:center;gap:2px;cursor:pointer;user-select:none}
+.est input{margin:0}
+.unitsel{display:flex;gap:4px;align-items:center}
+.unitsel select{padding:2px 4px;font-size:12.5px}
+details.adv{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+details.adv summary{cursor:pointer;font-weight:600;color:var(--t2);list-style:none}
+details.adv summary::before{content:"▸ ";color:var(--t3)} details.adv[open] summary::before{content:"▾ "}
+.item{border:1px solid var(--line);border-radius:10px;padding:10px;margin:8px 0;background:#fcfcfb}
+.item .row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px}
+.item .row3{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:6px;margin-bottom:6px}
+.item label{font-size:12px;color:var(--t3);display:block}
+.item .err{color:var(--bad);font-size:12px}
+.vars{font-size:12px;color:var(--t3);line-height:1.7}
+.vars code{background:#efefec;border-radius:4px;padding:0 4px;color:var(--t2);cursor:pointer}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.kpi{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.kpi .k{font-size:12.5px;color:var(--t2)}
+.kpi .v{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px}
+.kpi .v2{font-size:12.5px;color:var(--t2);font-variant-numeric:tabular-nums}
+.kpi .v2 b{font-weight:600}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:1px}
+.headline{font-size:16px;font-weight:700;margin:14px 0 4px;padding:10px 12px;border-radius:10px;background:#eef4fc;border-left:4px solid var(--base)}
+.headline.good{background:#eaf6ef;border-color:var(--good)} .headline.bad{background:#fdeeee;border-color:var(--bad)}
+.notes{list-style:none;padding:0;margin:8px 0 0}
+.notes li{display:flex;gap:8px;padding:6px 0;border-bottom:1px dashed var(--line);font-size:13.5px}
+.notes li:last-child{border-bottom:none}
+.tag{flex:none;font-size:11.5px;font-weight:700;border-radius:4px;padding:1px 6px;height:20px;line-height:18px}
+.tag.good{color:var(--good);background:#e3f3ea}.tag.warn{color:var(--warn);background:#fbf0dc}.tag.bad{color:var(--bad);background:#fbe5e5}.tag.info{color:var(--info);background:#e6eef9}
+.charts{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;margin-top:14px}
+.chart-title{font-size:13.5px;font-weight:700;margin:0 0 2px}
+.chart-sub{font-size:12px;color:var(--t3);margin-bottom:4px}
+svg text{font-family:inherit}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:8px;overflow:hidden}
+.seg button{border:none;background:#fff;padding:3px 10px;cursor:pointer;font-size:12.5px}
+.seg button.on{background:var(--t1);color:#fff}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--t2);flex-wrap:wrap}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
+table.trace{width:100%;border-collapse:collapse;font-size:13px}
+table.trace td,table.trace th{padding:5px 6px;border-bottom:1px solid #efeeea;text-align:right;font-variant-numeric:tabular-nums}
+table.trace td:first-child,table.trace th:first-child{text-align:left}
+table.trace td.f{text-align:left;color:var(--t3);font-size:12px}
+table.trace tr.key td{font-weight:700}
+#tip{position:fixed;pointer-events:none;background:#1b1b1a;color:#fff;font-size:12.5px;padding:6px 9px;border-radius:6px;z-index:50;display:none;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.preset{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.preset .btn.on{border-color:var(--base);color:var(--base);font-weight:600;background:#eef4fc}
+table.edit{width:100%;border-collapse:collapse}
+table.edit th{font-size:12px;color:var(--t2);text-align:left;font-weight:600;padding:4px;border-bottom:1px solid var(--line)}
+table.edit td{padding:3px 4px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1b1b1a;color:#fff;padding:8px 16px;border-radius:8px;display:none;z-index:60}
+.setrow{display:grid;grid-template-columns:260px 120px 1fr;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid #f0efec}
+.foot{color:var(--t3);font-size:12px;margin-top:20px;text-align:center}
+@media (max-width:1100px){.layout,.charts,.grid2{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<header>
+  <h1>三全利润与人工测算器</h1>
+  <div class="meta">
+    <input id="m-company" title="公司">
+    <input id="m-channel" title="渠道">
+    <input id="m-month" title="月份" style="width:90px">
+  </div>
+  <div class="grow"></div>
+  <button class="btn ghost" id="b-reset" title="清空当前内容，恢复演示数据">恢复演示数据</button>
+  <button class="btn" id="b-open">打开方案</button>
+  <button class="btn" id="b-save">保存方案</button>
+  <button class="btn primary" id="b-xlsx">导出 Excel</button>
+  <input type="file" id="f-open" accept=".json" hidden>
+</header>
+<nav class="tabs">
+  <button data-tab="profit" class="on">利润测算</button>
+  <button data-tab="labor">人工成本</button>
+  <button data-tab="sum">SKU 汇总</button>
+  <button data-tab="set">设置与说明</button>
+</nav>
+<main>
+  <!-- 利润测算 -->
+  <section class="page on" id="p-profit">
+    <div class="skus" id="sku-chips"></div>
+    <div class="layout">
+      <div class="card" id="inputs"></div>
+      <div>
+        <div class="card" id="results"></div>
+        <div class="card" style="margin-top:16px" id="advanced"></div>
+      </div>
+    </div>
+  </section>
+  <!-- 人工 -->
+  <section class="page" id="p-labor">
+    <div class="grid2">
+      <div class="card" id="labor-in"></div>
+      <div class="card" id="labor-out"></div>
+    </div>
+  </section>
+  <!-- 汇总 -->
+  <section class="page" id="p-sum"><div class="card" id="sum"></div></section>
+  <!-- 设置 -->
+  <section class="page" id="p-set"><div class="card" id="set"></div></section>
+  <div class="foot">演示数据全部为假设 · 数据只保存在这台电脑的浏览器里，换电脑请用“保存方案 / 打开方案” · V1.1</div>
+</main>
+<div id="tip"></div>
+<div class="toast" id="toast"></div>
+
+<script>/* ===== 演示数据（全部为假设） ===== */
+const LABOR_PRESETS = {
+  A: { label: 'A 固定薪资型', roles: [{ name: '仓管', count: 1, salary: 4500, social: 30, perfBase: 0, perfCoef: 0 }, { name: '行政', count: 1, salary: 4000, social: 30, perfBase: 0, perfCoef: 0 }], piece: 0, revPct: 0, tiers: [] },
+  B: { label: 'B 底薪 + 计件型', roles: [{ name: '拣货员', count: 2, salary: 3500, social: 30, perfBase: 0, perfCoef: 0 }], piece: 0.1, revPct: 0, tiers: [] },
+  C: { label: 'C 绩效激励型', roles: [{ name: '业务员', count: 2, salary: 4000, social: 30, perfBase: 800, perfCoef: 1 }], piece: 0.1, revPct: 0, tiers: [{ threshold: 1200, amount: 600 }] }
+};
+function scheme(o) { return Object.assign({ list: 18, discount: 0, volume: 1000, purchase: 10, purchaseUnit: 'bag', bagsPerBox: 12, laborMode: 'manual', labor: 0.4, cold: 1, loss: 0.2, rate: 5, rateBase: 'eff', fee: 2000 }, o); }
+function defaultState() {
+  return {
+    version: 1,
+    meta: { company: '三全郑州分公司', channel: '演示渠道', month: '2026-12' },
+    skus: [
+      { id: 's1', name: '速冻水饺 500g', base: scheme({}), promo: scheme({ discount: 2, volume: 1200 }), items: [], metrics: [], laborAlloc: 10, assumed: { purchase: true, labor: true, cold: true, loss: true } },
+      { id: 's2', name: '汤圆 400g', base: scheme({ list: 12, purchase: 6.5, labor: 0.3, cold: 0.8, loss: 0.15, fee: 1000, volume: 1500 }), promo: scheme({ list: 12, discount: 1.5, purchase: 6.5, labor: 0.3, cold: 0.8, loss: 0.15, fee: 1000, volume: 1900 }), items: [], metrics: [], laborAlloc: 10, assumed: { purchase: true, labor: true, cold: true, loss: true } },
+      { id: 's3', name: '馄饨 300g', base: scheme({ list: 15, purchase: 8.8, labor: 0.35, cold: 0.9, loss: 0.25, fee: 1500, volume: 800 }), promo: scheme({ list: 15, discount: 2, purchase: 8.8, labor: 0.35, cold: 0.9, loss: 0.25, fee: 1500, volume: 1050 }), items: [], metrics: [], laborAlloc: 10, assumed: { purchase: true, labor: true, cold: true, loss: true } }
+    ],
+    active: 0,
+    view: 'promo',
+    labor: Object.assign({ preset: 'C', alloc: 10 }, JSON.parse(JSON.stringify(LABOR_PRESETS.C))),
+    settings: { targetMargin: 15, coldMax: 5, laborMax: 8, liftMax: 30, assumedMax: 50 },
+    commonFee: 0
+  };
+}
+if (typeof module !== 'undefined') module.exports = { defaultState, LABOR_PRESETS, scheme };
+</script>
+<script>/* ===== 计算引擎：利润 / 人工 / 公式 ===== */
+const Engine = (() => {
+  const EPS = 1e-9;
+  const ceil = x => Math.ceil(x - EPS);
+  const num = v => (v === '' || v === null || v === undefined || isNaN(+v)) ? NaN : +v;
+
+  /* ---------- 公式解析（四则运算、比较、IF/MIN/MAX/ROUND） ---------- */
+  const FUNCS = { IF: 3, MIN: -1, MAX: -1, ROUND: 2 };
+  function tokenize(src) {
+    const t = []; let i = 0; const s = String(src).replace(/^\s*=/, '');
+    while (i < s.length) {
+      const c = s[i];
+      if (/\s/.test(c)) { i++; continue; }
+      if (/[0-9.]/.test(c)) { let j = i; while (j < s.length && /[0-9.]/.test(s[j])) j++; t.push({ k: 'n', v: parseFloat(s.slice(i, j)) }); i = j; continue; }
+      if (/[A-Za-z_一-鿿]/.test(c)) { let j = i; while (j < s.length && /[A-Za-z0-9_一-鿿]/.test(s[j])) j++; t.push({ k: 'id', v: s.slice(i, j) }); i = j; continue; }
+      const two = s.slice(i, i + 2);
+      if (['>=', '<=', '<>'].includes(two)) { t.push({ k: 'op', v: two }); i += 2; continue; }
+      if ('+-*/(),><=×÷（），'.includes(c)) {
+        const map = { '×': '*', '÷': '/', '（': '(', '）': ')', '，': ',' };
+        t.push({ k: 'op', v: map[c] || c }); i++; continue;
+      }
+      throw new Error('公式里有无法识别的字符：' + c);
+    }
+    return t;
+  }
+  function parse(src) {
+    const t = tokenize(src); let p = 0;
+    const peek = () => t[p], eat = v => { if (!t[p] || t[p].v !== v) throw new Error('公式缺少 “' + v + '”'); p++; };
+    function cmp() { let a = add(); while (peek() && ['>', '<', '>=', '<=', '=', '<>'].includes(peek().v)) { const o = t[p++].v; a = { k: 'bin', o, a, b: add() }; } return a; }
+    function add() { let a = mul(); while (peek() && ['+', '-'].includes(peek().v)) { const o = t[p++].v; a = { k: 'bin', o, a, b: mul() }; } return a; }
+    function mul() { let a = un(); while (peek() && ['*', '/'].includes(peek().v)) { const o = t[p++].v; a = { k: 'bin', o, a, b: un() }; } return a; }
+    function un() { if (peek() && peek().v === '-') { p++; return { k: 'neg', a: un() }; } if (peek() && peek().v === '+') { p++; return un(); } return atom(); }
+    function atom() {
+      const x = t[p++]; if (!x) throw new Error('公式不完整');
+      if (x.k === 'n') return { k: 'n', v: x.v };
+      if (x.v === '(') { const e = cmp(); eat(')'); return e; }
+      if (x.k === 'id') {
+        const F = x.v.toUpperCase();
+        if (peek() && peek().v === '(' && F in FUNCS) {
+          p++; const args = [];
+          if (peek() && peek().v !== ')') { args.push(cmp()); while (peek() && peek().v === ',') { p++; args.push(cmp()); } }
+          eat(')');
+          if (FUNCS[F] > 0 && args.length !== FUNCS[F]) throw new Error(F + ' 需要 ' + FUNCS[F] + ' 个参数');
+          if (!args.length) throw new Error(F + ' 缺少参数');
+          return { k: 'fn', f: F, args };
+        }
+        return { k: 'var', v: x.v };
+      }
+      throw new Error('公式在 “' + x.v + '” 附近有误');
+    }
+    const e = cmp(); if (p < t.length) throw new Error('公式在 “' + t[p].v + '” 附近有误'); return e;
+  }
+  function vars(ast, out = new Set()) {
+    if (!ast) return out;
+    if (ast.k === 'var') out.add(ast.v);
+    ['a', 'b'].forEach(k => ast[k] && vars(ast[k], out));
+    (ast.args || []).forEach(a => vars(a, out));
+    return out;
+  }
+  function evalAst(ast, env) {
+    switch (ast.k) {
+      case 'n': return ast.v;
+      case 'var': if (!(ast.v in env)) throw new Error('找不到变量 “' + ast.v + '”'); return env[ast.v];
+      case 'neg': return -evalAst(ast.a, env);
+      case 'bin': {
+        const a = evalAst(ast.a, env), b = evalAst(ast.b, env);
+        switch (ast.o) {
+          case '+': return a + b; case '-': return a - b; case '*': return a * b;
+          case '/': if (b === 0) throw new Error('公式里出现除以 0'); return a / b;
+          case '>': return a > b ? 1 : 0; case '<': return a < b ? 1 : 0; case '>=': return a >= b ? 1 : 0;
+          case '<=': return a <= b ? 1 : 0; case '=': return Math.abs(a - b) < EPS ? 1 : 0; case '<>': return Math.abs(a - b) >= EPS ? 1 : 0;
+        }
+      }
+      case 'fn': {
+        const v = ast.args.map(a => evalAst(a, env));
+        if (ast.f === 'IF') return v[0] ? v[1] : v[2];
+        if (ast.f === 'MIN') return Math.min(...v);
+        if (ast.f === 'MAX') return Math.max(...v);
+        if (ast.f === 'ROUND') { const m = Math.pow(10, v[1]); return Math.round(v[0] * m) / m; }
+      }
+    }
+    throw new Error('公式无法计算');
+  }
+  function toExcel(ast, ref) {
+    const r = a => toExcel(a, ref);
+    switch (ast.k) {
+      case 'n': return String(ast.v);
+      case 'var': if (!(ast.v in ref)) throw new Error('导出时找不到变量 ' + ast.v); return ref[ast.v];
+      case 'neg': return '(-' + r(ast.a) + ')';
+      case 'bin': return '(' + r(ast.a) + ast.o + r(ast.b) + ')';
+      case 'fn': return ast.f + '(' + ast.args.map(r).join(',') + ')';
+    }
+  }
+  function evalFormula(src, env) { return evalAst(parse(src), env); }
+
+  /* ---------- 人工计算器 ---------- */
+  function sortedTiers(L) {
+    return (L.tiers || []).filter(t => num(t.threshold) > 0 && num(t.amount) > 0)
+      .map(t => ({ threshold: +t.threshold, amount: +t.amount })).sort((a, b) => a.threshold - b.threshold);
+  }
+  function tierBonus(L, V) { let b = 0; sortedTiers(L).forEach(t => { if (V >= t.threshold) b = t.amount; }); return b; }
+  function laborTeam(L, allocPct) {
+    const roles = (L.roles || []).map(r => {
+      const base = (+r.count || 0) * (+r.salary || 0), social = base * (+r.social || 0) / 100, perf = (+r.count || 0) * (+r.perfBase || 0) * (+r.perfCoef || 0);
+      return { name: r.name, count: +r.count || 0, base, social, perf, total: base + social + perf };
+    });
+    const sum = k => roles.reduce((s, r) => s + r[k], 0);
+    const team = sum('total'), alloc = (allocPct === undefined || allocPct === '' || allocPct === null ? (+L.alloc || 0) : +allocPct) / 100;
+    return { roles, team, alloc, base: sum('base') * alloc, social: sum('social') * alloc, perf: sum('perf') * alloc, fixed: team * alloc, people: sum('count') };
+  }
+  function laborFor(L, V, eff, allocPct) {
+    const t = laborTeam(L, allocPct);
+    const piece = +L.piece || 0, revPct = (+L.revPct || 0) / 100;
+    const perBag = piece + revPct * eff, bonus = tierBonus(L, V);
+    const total = t.fixed + perBag * V + bonus;
+    return { ...t, piece, revPct, perBag, bonus, commission: perBag * V, total, perBagAll: V > 0 ? total / V : NaN };
+  }
+
+  /* ---------- 单个方案 ---------- */
+  const CORE = ['list', 'discount', 'volume', 'purchase', 'labor', 'cold', 'loss', 'rate', 'fee'];
+  const CORE_NAME = { list: '标价', discount: '商家折扣', volume: '销量', purchase: '采购', labor: '人工', cold: '冷链', loss: '损耗', rate: '扣点率', fee: '活动费' };
+
+  function compute(sku, key, labor, overrides) {
+    const s = Object.assign({}, sku[key], overrides || {});
+    const errors = [];
+    const missing = [];
+    const need = ['list', 'volume', 'purchase', 'cold', 'loss', 'rate'];
+    if (!s.laborMode || s.laborMode === 'manual') need.push('labor');
+    need.forEach(k => { if (isNaN(num(s[k]))) missing.push(CORE_NAME[k]); });
+    if (missing.length) return { ok: false, missing, errors: ['请补齐：' + missing.join('、') + '（零成本请明确填 0）'] };
+    const V = +s.volume, list = +s.list, disc = +(s.discount || 0), eff = list - disc;
+    const purchase = s.purchaseUnit === 'box' ? (+s.purchase) / (+s.bagsPerBox || NaN) : +s.purchase;
+    if (s.purchaseUnit === 'box' && !(+s.bagsPerBox > 0)) return { ok: false, missing: ['每箱袋数'], errors: ['采购按箱录入时，请填写每箱袋数'] };
+    const rate = (+s.rate) / 100, base = s.rateBase === 'list' ? list : eff, commission = rate * base;
+    let lab = null, laborBag = s.laborMode === 'none' ? 0 : (+s.labor || 0), laborFixed = 0, tier = 0;
+    if (s.laborMode === 'calc' && labor) { lab = laborFor(labor, V, eff, sku.laborAlloc); laborBag = lab.perBag; laborFixed = lab.fixed; tier = lab.bonus; }
+    const env = { 标价: list, 商家折扣: disc, 有效售价: eff, 销量: V, 采购: purchase, 人工: laborBag, 冷链: +s.cold, 损耗: +s.loss, 扣点率: rate, 活动费: +(s.fee || 0) };
+    const items = [];
+    let costBag = 0, subBag = 0, costEvt = 0, subEvt = 0;
+    (sku.items || []).forEach(it => {
+      const raw = (it.vals || {})[key];
+      let v;
+      try {
+        if (it.src === 'formula') { if (!raw) throw new Error('公式为空'); v = evalFormula(raw, env); }
+        else { v = num(raw); if (isNaN(v)) throw new Error('请填写数值（没有就填 0）'); }
+      } catch (e) { errors.push((it.name || '自定义项') + '：' + e.message); v = 0; }
+      let perBag = 0, fixed = 0, envVal = v;
+      if (it.method === 'bag') perBag = v;
+      else if (it.method === 'order') perBag = (+it.bagsPerOrder > 0) ? v / +it.bagsPerOrder : (errors.push((it.name || '') + '：请填写每单袋数'), 0);
+      else if (it.method === 'pct') { envVal = v / 100; perBag = envVal * (it.pctBase === 'list' ? list : eff); }
+      else if (it.method === 'event') fixed = v;
+      if (it.name) env[it.name] = envVal;
+      if (it.nature === 'cost') { costBag += perBag; costEvt += fixed; }
+      else if (it.nature === 'subsidy') { subBag += perBag; subEvt += fixed; }
+      items.push({ id: it.id, name: it.name, nature: it.nature, method: it.method, value: v, perBag, fixed });
+    });
+    const fee = +(s.fee || 0);
+    const unit = eff - purchase - laborBag - (+s.cold) - (+s.loss) - commission - costBag + subBag;
+    const F0 = fee + laborFixed + costEvt;           // 不含阶梯激励的固定费用
+    const fixed = F0 + tier;
+    const rev = eff * V, contribution = unit * V, profit = contribution - fixed + subEvt;
+    const margin = rev ? profit / rev : null, unitRate = eff ? unit / eff : null;
+    const res = {
+      ok: true, errors, V, list, disc, eff, rev, purchase, laborBag, cold: +s.cold, loss: +s.loss, rate, rateBase: s.rateBase, commission,
+      costBag, subBag, costEvt, subEvt, fee, laborFixed, tier, F0, fixed, unit, contribution, profit, margin, unitRate, items, lab, env
+    };
+    res.laborTotal = laborBag * V + laborFixed + tier;
+    res.minVolume = target => minVolume(res, labor && s.laborMode === 'calc' ? labor : null, target);
+    res.be = res.minVolume(0);
+    // 衍生指标
+    const env2 = Object.assign({}, env, { 收入: rev, 单位贡献: unit, 贡献利润: contribution, 固定费用: fixed, 场景利润: profit, 利润率: margin === null ? 0 : margin, 单位贡献率: unitRate === null ? 0 : unitRate });
+    res.metrics = (sku.metrics || []).map(m => {
+      try { const v = evalFormula(m.expr, env2); if (m.name) env2[m.name] = v; return { name: m.name, value: v, unit: m.unit }; }
+      catch (e) { return { name: m.name, error: e.message, unit: m.unit }; }
+    });
+    return res;
+  }
+
+  // 利润 ≥ target 的最小销量（考虑阶梯激励）。单位贡献 ≤ 0 时返回 null
+  function minVolume(r, labor, target) {
+    if (!(r.unit > EPS)) return null;
+    const tiers = labor ? sortedTiers(labor) : [];
+    const segs = [{ start: 0, bonus: 0 }].concat(tiers.map(t => ({ start: t.threshold, bonus: t.amount })));
+    for (let k = 0; k < segs.length; k++) {
+      const end = k + 1 < segs.length ? segs[k + 1].start : Infinity;
+      const need = (target + r.F0 + segs[k].bonus - r.subEvt) / r.unit;
+      const cand = Math.max(segs[k].start, ceil(need));
+      if (cand < end) return cand;
+    }
+    return null;
+  }
+
+  /* ---------- 敏感性 & 售价曲线 ---------- */
+  function sensitivity(sku, key, labor) {
+    const s = sku[key], baseR = compute(sku, key, labor); if (!baseR.ok) return [];
+    const keys = ['list', 'volume', 'purchase', 'cold', 'loss', 'rate', 'fee'];
+    if (!s.laborMode || s.laborMode === 'manual') keys.splice(3, 0, 'labor');
+    return keys.map(k => {
+      const v = +s[k] || 0; if (!v) return null;
+      const up = compute(sku, key, labor, { [k]: v * 1.1 }).profit - baseR.profit;
+      const dn = compute(sku, key, labor, { [k]: v * 0.9 }).profit - baseR.profit;
+      return { key: k, name: CORE_NAME[k], up, dn, span: Math.abs(up - dn) };
+    }).filter(Boolean).sort((a, b) => b.span - a.span);
+  }
+  function priceCurve(sku, key, labor) {
+    const s = sku[key], L = +s.list; if (!(L > 0)) return null;
+    const pts = [];
+    for (let i = 0; i <= 40; i++) { const p = L * (0.6 + 0.7 * i / 40); const r = compute(sku, key, labor, { list: p }); if (r.ok) pts.push({ p, profit: r.profit }); }
+    let bePrice = null;
+    for (let i = 1; i < pts.length; i++) if (pts[i - 1].profit < 0 && pts[i].profit >= 0) { const a = pts[i - 1], b = pts[i]; bePrice = a.p + (0 - a.profit) * (b.p - a.p) / (b.profit - a.profit); break; }
+    return { pts, bePrice, cur: L, curProfit: compute(sku, key, labor).profit };
+  }
+
+  /* ---------- 自动分析 ---------- */
+  const fmtY = v => '¥' + Math.round(v).toLocaleString('zh-CN');
+  const fmtP = v => (v * 100).toFixed(1) + '%';
+  function analyze(sku, labor, st) {
+    const out = [];
+    const b = compute(sku, 'base', labor), p = compute(sku, 'promo', labor);
+    if (!b.ok || !p.ok) return [{ level: 'warn', text: '有必填参数未填，补齐后才能给出分析。' }];
+    [b, p].forEach((r, i) => r.errors.forEach(e => out.push({ level: 'warn', text: (i ? '促销方案' : '基准方案') + ' · ' + e })));
+    const eq = p.minVolume(b.profit);
+    if (eq === null) out.push({ level: 'bad', text: '促销方案每袋不赚钱，卖多少都追不平基准利润 ' + fmtY(b.profit) + '。' });
+    else if (p.V >= eq) out.push({ level: 'good', text: '促销预计卖 ' + p.V.toLocaleString() + ' 袋，已超过追平基准利润所需的 ' + eq.toLocaleString() + ' 袋，多赚 ' + fmtY(p.profit - b.profit) + '。' });
+    else out.push({ level: 'info', text: '促销预计卖 ' + p.V.toLocaleString() + ' 袋，距离追平基准利润还差 ' + (eq - p.V).toLocaleString() + ' 袋（需 ' + eq.toLocaleString() + ' 袋）。' });
+    if (eq !== null && b.V > 0) { const lift = eq / b.V - 1; if (st.liftMax !== '' && lift * 100 > +st.liftMax) out.push({ level: 'warn', text: '要比基准多卖 ' + fmtP(lift) + ' 才能持平，高于设定的 ' + st.liftMax + '%，请核实能否做到。' }); }
+    [['基准', b], ['促销', p]].forEach(([n, r]) => {
+      if (r.unit <= 0) out.push({ level: 'bad', text: n + '方案每卖一袋亏 ' + '¥' + (-r.unit).toFixed(2) + '，加量只会扩大亏损。' });
+      if (st.targetMargin !== '' && r.margin !== null && r.margin * 100 < +st.targetMargin) out.push({ level: 'warn', text: n + '方案利润率 ' + fmtP(r.margin) + '，低于目标 ' + st.targetMargin + '%。' });
+    });
+    if (st.coldMax !== '' && p.rev > 0) { const c = p.cold * p.V / p.rev; if (c * 100 > +st.coldMax) out.push({ level: 'warn', text: '促销方案冷链占收入 ' + fmtP(c) + '，高于设定的 ' + st.coldMax + '%。' }); }
+    if (p.lab) {
+      const share = p.lab.total / p.rev;
+      if (st.laborMax !== '' && p.rev > 0 && share * 100 > +st.laborMax) out.push({ level: 'warn', text: '人工占收入 ' + fmtP(share) + '，高于设定的 ' + st.laborMax + '%。' });
+      sortedTiers(labor).forEach(t => {
+        if (p.V >= t.threshold && p.unit > 0 && p.V < t.threshold + t.amount / p.unit) {
+          const prev = compute(sku, 'promo', labor, { volume: t.threshold - 1 }).profit;
+          if (prev > p.profit) out.push({ level: 'warn', text: '阶梯激励临界点：卖 ' + (t.threshold - 1).toLocaleString() + ' 袋比现在的 ' + p.V.toLocaleString() + ' 袋多赚 ' + fmtY(prev - p.profit) + '，请核对激励设置。' });
+        }
+      });
+    }
+    const fl = sku.assumed || {}, costs = { purchase: p.purchase, labor: p.laborBag, cold: p.cold, loss: p.loss };
+    const tot = Object.values(costs).reduce((a, c) => a + c, 0), ass = Object.keys(costs).reduce((a, k) => a + (fl[k] ? costs[k] : 0), 0);
+    if (tot > 0 && st.assumedMax !== '' && ass / tot * 100 > +st.assumedMax) out.push({ level: 'info', text: '标为“估计”的成本占每袋成本 ' + fmtP(ass / tot) + '，结果主要基于估计值，仅供参考。' });
+    return out;
+  }
+
+  return { parse, vars, evalFormula, toExcel, compute, laborFor, laborTeam, tierBonus, sortedTiers, sensitivity, priceCurve, analyze, CORE_NAME, fmtY, fmtP };
+})();
+if (typeof module !== 'undefined') module.exports = Engine;
+</script>
+<script>/* ===== Excel 导出：纯 JS 生成带公式的 .xlsx（无需联网、无需第三方库） ===== */
+const XLSX = (() => {
+  let NOCACHE = false;
+  /* ---------- ZIP（store 模式） ---------- */
+  const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  const crc32 = b => { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+  function zip(files) {
+    const enc = new TextEncoder(), parts = [], central = []; let off = 0;
+    files.forEach(f => {
+      const name = enc.encode(f.name), data = typeof f.data === 'string' ? enc.encode(f.data) : f.data, crc = crc32(data);
+      const h = new DataView(new ArrayBuffer(30));
+      h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true);
+      h.setUint32(14, crc, true); h.setUint32(18, data.length, true); h.setUint32(22, data.length, true); h.setUint16(26, name.length, true);
+      parts.push(new Uint8Array(h.buffer), name, data);
+      const c = new DataView(new ArrayBuffer(46));
+      c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true);
+      c.setUint32(16, crc, true); c.setUint32(20, data.length, true); c.setUint32(24, data.length, true); c.setUint16(28, name.length, true); c.setUint32(42, off, true);
+      central.push(new Uint8Array(c.buffer), name);
+      off += 30 + name.length + data.length;
+    });
+    const cdSize = central.reduce((s, a) => s + a.length, 0), e = new DataView(new ArrayBuffer(22));
+    e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, cdSize, true); e.setUint32(16, off, true);
+    const all = parts.concat(central, [new Uint8Array(e.buffer)]), out = new Uint8Array(all.reduce((s, a) => s + a.length, 0));
+    let p = 0; all.forEach(a => { out.set(a, p); p += a.length; }); return out;
+  }
+
+  /* ---------- 工作表模型 ---------- */
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const colL = n => { let s = ''; n++; while (n) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; };
+  // 样式编号
+  const S = { txt: 0, title: 1, head: 2, inMoney: 3, money: 4, inInt: 5, int: 6, inPct: 7, pct: 8, inTxt: 9, note: 10, keyMoney: 11, sec: 12, keyInt: 13 };
+  class Sheet {
+    constructor(name) { this.name = name; this.rows = {}; this.widths = []; }
+    set(c, r, cell) { (this.rows[r] = this.rows[r] || {})[c] = cell; }
+    xml() {
+      let s = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
+      if (this.widths.length) s += '<cols>' + this.widths.map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`).join('') + '</cols>';
+      s += '<sheetData>';
+      Object.keys(this.rows).map(Number).sort((a, b) => a - b).forEach(r => {
+        s += `<row r="${r}">`;
+        Object.keys(this.rows[r]).map(Number).sort((a, b) => a - b).forEach(c => {
+          const x = this.rows[r][c], ref = colL(c) + r, st = x.s ? ` s="${x.s}"` : '';
+          if (x.f !== undefined) {
+            const isStr = typeof x.v === 'string';
+            const v = NOCACHE || x.v === undefined || x.v === null || (typeof x.v === 'number' && !isFinite(x.v)) ? '' : `<v>${esc(isStr ? x.v : +x.v.toFixed(10))}</v>`;
+            s += `<c r="${ref}"${st}${isStr ? ' t="str"' : ''}><f>${esc(x.f)}</f>${v}</c>`;
+          } else if (typeof x.v === 'number' && isFinite(x.v)) s += `<c r="${ref}"${st}><v>${+x.v.toFixed(10)}</v></c>`;
+          else if (x.v !== undefined && x.v !== null && x.v !== '') s += `<c r="${ref}"${st} t="inlineStr"><is><t xml:space="preserve">${esc(x.v)}</t></is></c>`;
+          else s += `<c r="${ref}"${st}/>`;
+        });
+        s += '</row>';
+      });
+      return s + '</sheetData></worksheet>';
+    }
+  }
+  const STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<numFmts count="3"><numFmt numFmtId="164" formatCode="&quot;¥&quot;#,##0.00;[Red]-&quot;¥&quot;#,##0.00"/><numFmt numFmtId="165" formatCode="0.0%"/><numFmt numFmtId="166" formatCode="#,##0"/></numFmts>
+<fonts count="5"><font><sz val="11"/><name val="Microsoft YaHei"/></font><font><b/><sz val="11"/><name val="Microsoft YaHei"/></font><font><b/><sz val="14"/><name val="Microsoft YaHei"/></font><font><i/><sz val="10"/><color rgb="FF6B6B6B"/><name val="Microsoft YaHei"/></font><font><b/><sz val="11"/><color rgb="FF1C5CAB"/><name val="Microsoft YaHei"/></font></fonts>
+<fills count="5"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFF4CC"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE8EEF6"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF3F3F1"/><bgColor indexed="64"/></patternFill></fill></fills>
+<borders count="2"><border/><border><bottom style="thin"><color rgb="FF9A9A9A"/></bottom></border></borders>
+<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+<cellXfs count="14">
+<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>
+<xf numFmtId="0" fontId="1" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"/>
+<xf numFmtId="164" fontId="0" fillId="2" borderId="0" xfId="0" applyNumberFormat="1" applyFill="1"/>
+<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
+<xf numFmtId="166" fontId="0" fillId="2" borderId="0" xfId="0" applyNumberFormat="1" applyFill="1"/>
+<xf numFmtId="166" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
+<xf numFmtId="165" fontId="0" fillId="2" borderId="0" xfId="0" applyNumberFormat="1" applyFill="1"/>
+<xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
+<xf numFmtId="0" fontId="0" fillId="2" borderId="0" xfId="0" applyFill="1"/>
+<xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment wrapText="1" vertical="top"/></xf>
+<xf numFmtId="164" fontId="4" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1"/>
+<xf numFmtId="0" fontId="1" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"/>
+<xf numFmtId="166" fontId="4" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1"/>
+</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+
+  function book(sheets) {
+    const files = [];
+    files.push({ name: '[Content_Types].xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' + sheets.map((s, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('') + '</Types>' });
+    files.push({ name: '_rels/.rels', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>' });
+    files.push({ name: 'xl/workbook.xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>' + sheets.map((s, i) => `<sheet name="${esc(s.name)}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('') + '</sheets><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>' });
+    files.push({ name: 'xl/_rels/workbook.xml.rels', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' + sheets.map((s, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('') + `<Relationship Id="rId${sheets.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>` });
+    files.push({ name: 'xl/styles.xml', data: STYLES });
+    sheets.forEach((s, i) => files.push({ name: `xl/worksheets/sheet${i + 1}.xml`, data: s.xml() }));
+    return zip(files);
+  }
+
+  /* ---------- 由计算器状态生成工作簿 ---------- */
+  const sheetName = (n, used) => { let s = String(n || 'SKU').replace(/[\[\]:*?\/\\']/g, '').slice(0, 28) || 'SKU'; let x = s, i = 2; while (used.has(x)) x = s + i++; used.add(x); return x; };
+  const q = n => `'${n}'`;
+
+  function laborSheet(L, E) {
+    const sh = new Sheet('人工'); sh.widths = [22, 10, 12, 14, 12, 12, 16];
+    sh.set(0, 1, { v: '人工成本计算（黄色格可修改）', s: S.title });
+    ['岗位', '人数', '月薪', '社保公积金比例', '绩效基数', '绩效系数', '月人工合计'].forEach((h, c) => sh.set(c, 2, { v: h, s: S.head }));
+    const roles = L.roles || []; let r = 3;
+    const team = E.laborTeam(L);
+    roles.forEach((ro, i) => {
+      sh.set(0, r, { v: ro.name || '岗位' + (i + 1), s: S.inTxt }); sh.set(1, r, { v: +ro.count || 0, s: S.inInt }); sh.set(2, r, { v: +ro.salary || 0, s: S.inMoney });
+      sh.set(3, r, { v: (+ro.social || 0) / 100, s: S.inPct }); sh.set(4, r, { v: +ro.perfBase || 0, s: S.inMoney }); sh.set(5, r, { v: +ro.perfCoef || 0, s: S.inTxt });
+      sh.set(6, r, { f: `B${r}*(C${r}*(1+D${r})+E${r}*F${r})`, v: team.roles[i].total, s: S.money }); r++;
+    });
+    const first = 3, last = Math.max(3, r - 1); if (!roles.length) r = 4;
+    const ref = {};
+    const row = (label, cell, key) => { sh.set(0, r, { v: label, s: S.txt }); sh.set(1, r, cell); ref[key] = `${q('人工')}!$B$${r}`; r++; };
+    r++;
+    row('团队月人工合计', { f: roles.length ? `SUM(G${first}:G${last})` : '0', v: team.team, s: S.money }, 'team');
+    row('每袋提成（元/袋）', { v: +L.piece || 0, s: S.inMoney }, 'piece');
+    row('收入提成比例', { v: (+L.revPct || 0) / 100, s: S.inPct }, 'revPct');
+    r++;
+    sh.set(0, r, { v: '阶梯激励（门槛需从小到大）', s: S.sec }); sh.set(1, r, { v: '销量门槛', s: S.sec }); sh.set(2, r, { v: '奖励金额', s: S.sec }); r++;
+    const tiers = E.sortedTiers(L); ref.tiers = [];
+    tiers.forEach((t, i) => { sh.set(0, r, { v: '第' + (i + 1) + '档', s: S.txt }); sh.set(1, r, { v: t.threshold, s: S.inInt }); sh.set(2, r, { v: t.amount, s: S.inMoney }); ref.tiers.push({ t: `${q('人工')}!$B$${r}`, a: `${q('人工')}!$C$${r}`, tv: t.threshold, av: t.amount }); r++; });
+    r++; sh.set(0, r, { v: '说明：团队月人工 × 各 SKU 表里的“人工归属比例” = 计入该 SKU 固定费用的人工；提成按袋计入单位成本；达到门槛时发放对应档位的奖励（取达到的最高一档）。', s: S.note });
+    return { sh, ref };
+  }
+
+  function skuSheet(name, sku, state, E, lref) {
+    const sh = new Sheet(name); sh.widths = [30, 16, 16, 46];
+    const L = state.labor, R = { base: E.compute(sku, 'base', L), promo: E.compute(sku, 'promo', L) };
+    const keys = ['base', 'promo'], col = { base: 1, promo: 2 }, CL = { base: 'B', promo: 'C' };
+    sh.set(0, 1, { v: (sku.name || 'SKU') + ' 利润测算（黄色格可修改，其余为公式）', s: S.title });
+    ['项目', '基准方案', '促销方案', '说明'].forEach((h, c) => sh.set(c, 2, { v: h, s: S.head }));
+    let r = 3; const row = {};
+    const line = (key, label, note, fn) => { row[key] = r; sh.set(0, r, { v: label }); if (note) sh.set(3, r, { v: note, s: S.note }); keys.forEach(k => { const c = fn(k, CL[k], r); if (c) sh.set(col[k], r, c); }); r++; };
+    const sec = label => { sh.set(0, r, { v: label, s: S.sec }); [1, 2, 3].forEach(c => sh.set(c, r, { v: '', s: S.sec })); r++; };
+    sec('输入参数');
+    line('list', '标价（元/袋）', '扣渠道费前的单袋售价', k => ({ v: +sku[k].list, s: S.inMoney }));
+    line('disc', '商家承担折扣（元/袋）', '直接录折后价时填 0', k => ({ v: +(sku[k].discount || 0), s: S.inMoney }));
+    line('vol', '预计销量（袋）', '', k => ({ v: +sku[k].volume, s: S.inInt }));
+    line('pur', '采购价', '按箱录入时为元/箱，按袋录入时为元/袋', k => ({ v: +sku[k].purchase, s: S.inMoney }));
+    line('box', '每箱袋数（按袋录入填 1）', '', k => ({ v: sku[k].purchaseUnit === 'box' ? +sku[k].bagsPerBox : 1, s: S.inInt }));
+    // 有效售价行号先占位，后面回填公式引用
+    const effRow = () => row.eff;
+    line('labor', '人工（元/袋）', '来自人工表时为公式；不计人工时为 0', (k, C) => sku[k].laborMode === 'calc' ? { f: `${lref.piece}+${lref.revPct}*${C}{EFF}`, v: R[k].laborBag, s: S.money } : sku[k].laborMode === 'none' ? { v: 0, s: S.money } : { v: +sku[k].labor, s: S.inMoney });
+    line('alloc', '人工归属比例', '团队月人工中算到本 SKU 的比例（用人工表时生效）', () => ({ v: (sku.laborAlloc === undefined || sku.laborAlloc === '' ? (+L.alloc || 0) : +sku.laborAlloc) / 100, s: S.inPct }));
+    line('cold', '冷链（元/袋）', '', k => ({ v: +sku[k].cold, s: S.inMoney }));
+    line('loss', '损耗（元/袋）', '', k => ({ v: +sku[k].loss, s: S.inMoney }));
+    line('rate', '渠道扣点率', '', k => ({ v: (+sku[k].rate) / 100, s: S.inPct }));
+    line('rbase', '扣点基数', '填“有效售价”或“标价”，按合同', k => ({ v: sku[k].rateBase === 'list' ? '标价' : '有效售价', s: S.inTxt }));
+    line('fee', '活动费（元）', '可归属本场景的一次性费用', k => ({ v: +(sku[k].fee || 0), s: S.inMoney }));
+    // 自定义项目
+    const items = sku.items || [], itemRow = {}, orderRow = {};
+    const NAT = { cost: '成本', subsidy: '补贴', ref: '参考' }, MET = { bag: '按袋', order: '按单', pct: '按比例', event: '按活动' };
+    if (items.length) sec('自定义项目');
+    items.forEach((it, i) => {
+      const ref0 = C => ({ 标价: C + row.list, 商家折扣: C + row.disc, 有效售价: C + '{EFF}', 销量: C + row.vol, 采购: C + '{PURBAG}', 人工: C + row.labor, 冷链: C + row.cold, 损耗: C + row.loss, 扣点率: C + row.rate, 活动费: C + row.fee });
+      line('it' + i, (it.name || '自定义' + (i + 1)) + '（' + NAT[it.nature] + '·' + MET[it.method] + '）', it.src === 'formula' ? '公式：' + (it.vals.base || '') : (it.method === 'pct' ? '比例' : ''), (k, C) => {
+        const res = R[k].items[i] || { value: 0 }, isPct = it.method === 'pct';
+        const v = isPct ? res.value / 100 : res.value, st = isPct ? (it.src === 'formula' ? S.pct : S.inPct) : (it.src === 'formula' ? S.money : S.inMoney);
+        if (it.src === 'formula') {
+          const ref = ref0(C); items.slice(0, i).forEach((p, j) => { if (p.name) ref[p.name] = C + itemRow[j]; });
+          let f; try { f = E.toExcel(E.parse(it.vals[k] || '0'), ref); } catch (e) { f = '0'; }
+          return { f: isPct ? `(${f})/100` : f, v, s: st };
+        }
+        return { v, s: st };
+      });
+      itemRow[i] = row['it' + i];
+      if (it.method === 'order') { line('io' + i, '  └ 每单袋数', '', () => ({ v: +it.bagsPerOrder || 0, s: S.inInt })); orderRow[i] = row['io' + i]; }
+    });
+    const calc = state.labor && keys.some(k => sku[k].laborMode === 'calc');
+    line('lfix', '人工固定（元）', '团队月人工 × 人工归属比例', (k, C) => sku[k].laborMode === 'calc' ? { f: `${lref.team}*${C}${row.alloc}`, v: R[k].laborFixed, s: S.money } : { v: 0, s: S.money });
+    line('tier', '阶梯激励（元）', '来自人工表：达到门槛的奖励', (k, C) => {
+      if (sku[k].laborMode !== 'calc' || !lref.tiers.length) return { v: 0, s: S.money };
+      let f = '0'; lref.tiers.forEach(t => { f = `IF(${C}${row.vol}>=${t.t},${t.a},${f})`; });
+      return { f, v: R[k].tier, s: S.money };
+    });
+    sec('计算结果（公式，自动重算）');
+    line('eff', '有效售价（元/袋）', '标价 − 商家承担折扣', (k, C) => ({ f: `${C}${row.list}-${C}${row.disc}`, v: R[k].eff, s: S.money }));
+    line('purbag', '采购（元/袋）', '', (k, C) => ({ f: `${C}${row.pur}/${C}${row.box}`, v: R[k].purchase, s: S.money }));
+    line('rev', '销售收入', '有效售价 × 销量', (k, C) => ({ f: `${C}${row.eff}*${C}${row.vol}`, v: R[k].rev, s: S.keyMoney }));
+    line('comm', '渠道扣点（元/袋）', '', (k, C) => ({ f: `${C}${row.rate}*IF(${C}${row.rbase}="标价",${C}${row.list},${C}${row.eff})`, v: R[k].commission, s: S.money }));
+    const per = (C, it, i) => it.method === 'bag' ? C + itemRow[i] : it.method === 'order' ? `${C}${itemRow[i]}/${C}${orderRow[i]}` : it.method === 'pct' ? `${C}${itemRow[i]}*${it.pctBase === 'list' ? C + row.list : C + row.eff}` : null;
+    const sumOf = (C, nat, evt) => { const xs = items.map((it, i) => it.nature === nat ? (evt ? (it.method === 'event' ? C + itemRow[i] : null) : per(C, it, i)) : null).filter(Boolean); return xs.length ? xs.join('+') : '0'; };
+    line('cbag', '其他每袋成本', '自定义成本（按袋/按单/按比例）', (k, C) => ({ f: sumOf(C, 'cost', false), v: R[k].costBag, s: S.money }));
+    line('sbag', '每袋补贴', '自定义补贴（按袋/按单/按比例）', (k, C) => ({ f: sumOf(C, 'subsidy', false), v: R[k].subBag, s: S.money }));
+    line('unit', '单位贡献（元/袋）', '有效售价 − 各项每袋成本 + 每袋补贴', (k, C) => ({ f: `${C}${row.eff}-${C}${row.purbag}-${C}${row.labor}-${C}${row.cold}-${C}${row.loss}-${C}${row.comm}-${C}${row.cbag}+${C}${row.sbag}`, v: R[k].unit, s: S.keyMoney }));
+    line('contrib', '贡献利润', '单位贡献 × 销量', (k, C) => ({ f: `${C}${row.unit}*${C}${row.vol}`, v: R[k].contribution, s: S.money }));
+    line('fixed', '固定费用', '活动费 + 人工固定 + 阶梯激励 + 按活动计的成本', (k, C) => ({ f: `${C}${row.fee}+${C}${row.lfix}+${C}${row.tier}+${sumOf(C, 'cost', true)}`, v: R[k].fixed, s: S.money }));
+    line('sevt', '活动补贴', '按活动总额计的补贴', (k, C) => ({ f: sumOf(C, 'subsidy', true), v: R[k].subEvt, s: S.money }));
+    line('profit', '预计场景利润', '贡献利润 − 固定费用 + 活动补贴', (k, C) => ({ f: `${C}${row.contrib}-${C}${row.fixed}+${C}${row.sevt}`, v: R[k].profit, s: S.keyMoney }));
+    line('margin', '场景利润率', '', (k, C) => ({ f: `IF(${C}${row.rev}=0,"—",${C}${row.profit}/${C}${row.rev})`, v: R[k].margin === null ? '—' : R[k].margin, s: S.pct }));
+    line('urate', '单位贡献率', '单位贡献 ÷ 有效售价', (k, C) => ({ f: `IF(${C}${row.eff}=0,"—",${C}${row.unit}/${C}${row.eff})`, v: R[k].unitRate === null ? '—' : R[k].unitRate, s: S.pct }));
+    const mv = (k, C, T) => {
+      const U = C + row.unit, F0 = `(${C}${row.fixed}-${C}${row.tier})`, Sb = C + row.sevt;
+      const tiers = sku[k].laborMode === 'calc' ? lref.tiers : [];
+      if (!tiers.length) return `IF(${U}<=0,"无可用",MAX(0,ROUNDUP((${T}+${F0}-${Sb})/${U},0)))`;
+      const cand = (start, bonus) => `MAX(${start},ROUNDUP((${T}+${F0}+${bonus}-${Sb})/${U},0))`;
+      const segs = [{ s: '0', b: '0' }].concat(tiers.map(t => ({ s: t.t, b: t.a })));
+      let f = cand(segs[segs.length - 1].s, segs[segs.length - 1].b);
+      for (let i = segs.length - 2; i >= 0; i--) f = `IF(${cand(segs[i].s, segs[i].b)}<${segs[i + 1].s},${cand(segs[i].s, segs[i].b)},${f})`;
+      return `IF(${U}<=0,"无可用",${f})`;
+    };
+    line('be', '盈亏平衡销量（袋）', '利润 ≥ 0 的最低销量', (k, C) => ({ f: mv(k, C, '0'), v: R[k].be === null ? '无可用' : R[k].be, s: S.keyInt }));
+    const eq = R.promo.minVolume(R.base.profit);
+    line('eq', '追平基准利润所需销量（袋）', '促销方案达到基准方案利润的最低销量', (k, C) => k === 'promo' ? { f: mv(k, C, `B${row.profit}`), v: eq === null ? '无可用' : eq, s: S.keyInt } : { v: '—' });
+    line('gap', '距离追平还差（袋）', '负数表示已超过', (k, C) => k === 'promo' ? { f: `IF(ISNUMBER(C${row.eq}),C${row.eq}-C${row.vol},"—")`, v: eq === null ? '—' : eq - R.promo.V, s: S.int } : { v: '—' });
+    // 衍生指标
+    const ms = sku.metrics || [];
+    if (ms.length) {
+      sec('自定义指标');
+      ms.forEach((m, i) => line('m' + i, m.name || '指标' + (i + 1), '公式：' + m.expr, (k, C) => {
+        const ref = { 标价: C + row.list, 商家折扣: C + row.disc, 有效售价: C + row.eff, 销量: C + row.vol, 采购: C + row.purbag, 人工: C + row.labor, 冷链: C + row.cold, 损耗: C + row.loss, 扣点率: C + row.rate, 活动费: C + row.fee, 收入: C + row.rev, 单位贡献: C + row.unit, 贡献利润: C + row.contrib, 固定费用: C + row.fixed, 场景利润: C + row.profit, 利润率: `IF(ISNUMBER(${C}${row.margin}),${C}${row.margin},0)`, 单位贡献率: `IF(ISNUMBER(${C}${row.urate}),${C}${row.urate},0)` };
+        items.forEach((p, j) => { if (p.name) ref[p.name] = C + itemRow[j]; });
+        ms.slice(0, i).forEach((p, j) => { if (p.name) ref[p.name] = C + row['m' + j]; });
+        const mres = R[k].metrics[i] || {};
+        try { return { f: E.toExcel(E.parse(m.expr), ref), v: mres.value, s: S.txt }; } catch (e) { return { v: '公式有误' }; }
+      }));
+    }
+    // 回填占位
+    Object.values(sh.rows).forEach(rw => Object.values(rw).forEach(c => { if (c.f) c.f = c.f.replace(/\{EFF\}/g, row.eff).replace(/\{PURBAG\}/g, row.purbag); }));
+    return { sh, row, R };
+  }
+
+  function build(state, E, analyses) {
+    const used = new Set(['说明', '汇总', '人工', '分析提示']);
+    const lab = laborSheet(state.labor, E);
+    const skus = state.skus.map(s => ({ s, name: sheetName(s.name, used) }));
+    const sheets = skus.map(x => Object.assign(skuSheet(x.name, x.s, state, E, lab.ref), { name: x.name }));
+    // 汇总
+    const sum = new Sheet('汇总'); sum.widths = [24, 16, 16, 16, 16];
+    sum.set(0, 1, { v: '各 SKU 汇总（同一渠道、同一月份）', s: S.title });
+    ['SKU', '基准收入', '基准利润', '促销收入', '促销利润'].forEach((h, c) => sum.set(c, 2, { v: h, s: S.head }));
+    let r = 3;
+    sheets.forEach(x => {
+      const n = q(x.name); sum.set(0, r, { v: x.name });
+      sum.set(1, r, { f: `${n}!B${x.row.rev}`, v: x.R.base.rev, s: S.money }); sum.set(2, r, { f: `${n}!B${x.row.profit}`, v: x.R.base.profit, s: S.money });
+      sum.set(3, r, { f: `${n}!C${x.row.rev}`, v: x.R.promo.rev, s: S.money }); sum.set(4, r, { f: `${n}!C${x.row.profit}`, v: x.R.promo.profit, s: S.money }); r++;
+    });
+    const f1 = 3, l1 = r - 1, tot = k => sheets.reduce((a, x) => a + x.R[k.split('.')[0]][k.split('.')[1]], 0);
+    sum.set(0, r, { v: '各 SKU 合计', s: S.sec }); ['B', 'C', 'D', 'E'].forEach((c, i) => sum.set(i + 1, r, { f: `SUM(${c}${f1}:${c}${l1})`, v: tot(['base.rev', 'base.profit', 'promo.rev', 'promo.profit'][i]), s: S.keyMoney })); const tr = r; r++;
+    sum.set(0, r, { v: '共同费用（只登记一次）' }); sum.set(2, r, { v: +state.commonFee || 0, s: S.inMoney }); sum.set(4, r, { v: +state.commonFee || 0, s: S.inMoney }); const cr = r; r++;
+    sum.set(0, r, { v: '汇总利润' }); sum.set(2, r, { f: `C${tr}-C${cr}`, v: tot('base.profit') - (+state.commonFee || 0), s: S.keyMoney }); sum.set(4, r, { f: `E${tr}-E${cr}`, v: tot('promo.profit') - (+state.commonFee || 0), s: S.keyMoney }); const pr = r; r++;
+    sum.set(0, r, { v: '汇总利润率' });
+    const bm = tot('base.rev') ? (tot('base.profit') - (+state.commonFee || 0)) / tot('base.rev') : '—', pm = tot('promo.rev') ? (tot('promo.profit') - (+state.commonFee || 0)) / tot('promo.rev') : '—';
+    sum.set(2, r, { f: `IF(B${tr}=0,"—",C${pr}/B${tr})`, v: bm, s: S.pct }); sum.set(4, r, { f: `IF(D${tr}=0,"—",E${pr}/D${tr})`, v: pm, s: S.pct }); r += 2;
+    sum.set(0, r, { v: '盈亏平衡销量不跨 SKU 相加；共同费用不分摊到单个 SKU。', s: S.note });
+    // 分析提示
+    const an = new Sheet('分析提示'); an.widths = [18, 100];
+    an.set(0, 1, { v: '导出时的分析提示（文字不会随 Excel 修改自动更新）', s: S.title });
+    ['SKU', '提示'].forEach((h, c) => an.set(c, 2, { v: h, s: S.head })); r = 3;
+    skus.forEach((x, i) => (analyses[i] || []).forEach(a => { an.set(0, r, { v: x.name }); an.set(1, r, { v: a.text }); r++; }));
+    // 说明
+    const doc = new Sheet('说明'); doc.widths = [110];
+    ['三全食品 利润与人工成本测算（由网页计算器导出）', '', '· 黄色格子是输入，可以直接修改；其余格子是公式，会自动重算。',
+      '· 每个 SKU 一张表：上半部分是参数，下半部分是计算结果。“汇总”表合计各 SKU；“人工”表是人工成本计算器。',
+      '· 盈亏平衡销量和追平销量已考虑阶梯激励。阶梯门槛请保持从小到大。', '· “分析提示”是导出那一刻的文字结论，修改数字后请回到网页重新生成。',
+      '· 演示数据全部为假设，请替换为实际采购单、结算单数据。', '', '导出时间：' + new Date().toLocaleString('zh-CN')].forEach((t, i) => doc.set(0, i + 1, { v: t, s: i === 0 ? S.title : S.txt }));
+    return book([doc, sum].concat(sheets.map(x => x.sh), [lab.sh, an]));
+  }
+  return { build, zip, setNoCache: b => { NOCACHE = b; } };
+})();
+if (typeof module !== 'undefined') module.exports = XLSX;
+</script>
+<script>
+/* ======================= 状态 ======================= */
+const KEY = 'sanquan-calc-v1';
+let S = load() || defaultState();
+function load(){ try{ const t = localStorage.getItem(KEY); return t ? JSON.parse(t) : null; }catch(e){ return null; } }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+const $ = s => document.querySelector(s);
+const sku = () => S.skus[S.active] || S.skus[0];
+const yuan = v => (v === null || v === undefined || !isFinite(v)) ? '—' : (v < 0 ? '-¥' : '¥') + Math.abs(v).toLocaleString('zh-CN', { maximumFractionDigits: 0 });
+const yuan2 = v => (v === null || v === undefined || !isFinite(v)) ? '—' : (v < 0 ? '-¥' : '¥') + Math.abs(v).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const pct = v => (v === null || v === undefined || !isFinite(v)) ? '—' : (v * 100).toFixed(1) + '%';
+const bags = v => v === null || v === undefined ? '无可用' : v.toLocaleString('zh-CN') + ' 袋';
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const uid = () => Math.random().toString(36).slice(2, 9);
+function toast(t){ const el = $('#toast'); el.textContent = t; el.style.display = 'block'; clearTimeout(toast.h); toast.h = setTimeout(() => el.style.display = 'none', 2200); }
+
+/* ======================= 提示框 ======================= */
+document.addEventListener('mousemove', e => {
+  const t = e.target.closest && e.target.closest('[data-tip]'), tip = $('#tip');
+  if (!t){ tip.style.display = 'none'; return; }
+  tip.innerHTML = t.getAttribute('data-tip'); tip.style.display = 'block';
+  const w = tip.offsetWidth; tip.style.left = Math.min(e.clientX + 14, innerWidth - w - 8) + 'px'; tip.style.top = (e.clientY + 14) + 'px';
+});
+
+/* ======================= 标签页 ======================= */
+document.querySelectorAll('nav.tabs button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('nav.tabs button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.page').forEach(p => p.classList.toggle('on', p.id === 'p-' + b.dataset.tab));
+  renderAll();
+});
+
+/* ======================= 顶部 ======================= */
+['company', 'channel', 'month'].forEach(k => { const el = $('#m-' + k); el.value = S.meta[k] || ''; el.oninput = () => { S.meta[k] = el.value; save(); }; });
+$('#b-reset').onclick = () => { if (confirm('恢复演示数据会清掉当前所有输入，确定吗？（建议先“保存方案”）')){ S = defaultState(); save(); ['company','channel','month'].forEach(k => $('#m-' + k).value = S.meta[k]); renderAll(true); toast('已恢复演示数据'); } };
+$('#b-save').onclick = () => download(new Blob([JSON.stringify(S, null, 1)], { type: 'application/json' }), fileBase() + '.json');
+$('#b-open').onclick = () => $('#f-open').click();
+$('#f-open').onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  const rd = new FileReader();
+  rd.onload = () => { try{ const o = JSON.parse(rd.result); if (!o.skus) throw 0; S = Object.assign(defaultState(), o); save(); ['company','channel','month'].forEach(k => $('#m-' + k).value = S.meta[k] || ''); renderAll(true); toast('已打开：' + f.name); }catch(err){ alert('这个文件不是本工具保存的方案。'); } };
+  rd.readAsText(f); e.target.value = '';
+};
+$('#b-xlsx').onclick = () => {
+  try{
+    const an = S.skus.map(s => Engine.analyze(s, S.labor, S.settings));
+    const bad = S.skus.filter(s => !Engine.compute(s, 'base', S.labor).ok || !Engine.compute(s, 'promo', S.labor).ok).map(s => s.name);
+    if (bad.length){ alert('请先补齐这些 SKU 的必填参数再导出：' + bad.join('、')); return; }
+    download(new Blob([XLSX.build(S, Engine, an)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), fileBase() + '.xlsx');
+    toast('已导出 Excel（带公式，可继续修改）');
+  }catch(err){ alert('导出失败：' + err.message); }
+};
+function fileBase(){ return ('三全测算_' + (S.meta.channel || '') + '_' + (S.meta.month || '')).replace(/[\\/:*?"<>|\s]+/g, '_'); }
+function download(blob, name){ const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); }
+
+/* ======================= 利润测算：输入区 ======================= */
+const ROWS = [
+  { k: 'list', l: '标价', u: '元/袋', hint: '扣渠道费前的单袋售价' },
+  { k: 'discount', l: '商家承担折扣', u: '元/袋', hint: '直接录折后价时填 0' },
+  { k: 'volume', l: '预计销量', u: '袋', int: true },
+  { k: 'purchase', l: '采购价', u: '', est: true, unit: true },
+  { k: 'labor', l: '人工', u: '元/袋', est: true, labor: true, hint: '手填：每袋人工金额；人工表：按“人工成本”页计算（提成 + 固定人工 + 激励）；不计人工：完全不算人工' },
+  { k: 'cold', l: '冷链', u: '元/袋', est: true },
+  { k: 'loss', l: '损耗', u: '元/袋', est: true },
+  { k: 'rate', l: '渠道扣点率', u: '%' },
+  { k: 'rateBase', l: '扣点基数', sel: [['eff', '有效售价'], ['list', '标价']] },
+  { k: 'fee', l: '活动费', u: '元', hint: '可归属本场景的一次性费用' }
+];
+function renderChips(){
+  const el = $('#sku-chips');
+  el.innerHTML = S.skus.map((s, i) => `<button class="chip ${i === S.active ? 'on' : ''}" data-i="${i}">${esc(s.name)}</button>`).join('') +
+    `<button class="btn small" id="sku-add">+ 新增 SKU</button><span style="flex:1"></span>` +
+    `<button class="btn small ghost" id="sku-ren">改名</button><button class="btn small ghost" id="sku-copy">复制此 SKU</button><button class="btn small ghost" id="sku-del">删除</button>`;
+  el.querySelectorAll('.chip').forEach(b => b.onclick = () => { S.active = +b.dataset.i; save(); renderAll(true); });
+  $('#sku-add').onclick = () => { const n = prompt('新 SKU 名称', '新商品'); if (!n) return; S.skus.push({ id: uid(), name: n, base: scheme({}), promo: scheme({}), items: [], metrics: [], assumed: { purchase: true, labor: true, cold: true, loss: true } }); S.active = S.skus.length - 1; save(); renderAll(true); };
+  $('#sku-ren').onclick = () => { const n = prompt('SKU 名称', sku().name); if (n){ sku().name = n; save(); renderAll(true); } };
+  $('#sku-copy').onclick = () => { const c = JSON.parse(JSON.stringify(sku())); c.id = uid(); c.name += '（副本）'; S.skus.splice(S.active + 1, 0, c); S.active++; save(); renderAll(true); };
+  $('#sku-del').onclick = () => { if (S.skus.length < 2){ alert('至少保留一个 SKU'); return; } if (confirm('删除「' + sku().name + '」？')){ S.skus.splice(S.active, 1); S.active = Math.max(0, S.active - 1); save(); renderAll(true); } };
+}
+function renderInputs(){
+  const k = sku(), lab = S.labor;
+  let h = `<h2>输入参数 <span class="sub">黄色格可改，改完右边立即更新</span></h2>
+  <table class="inp"><tr><th style="width:34%">项目</th><th class="b">基准方案</th><th class="p">促销方案</th></tr>`;
+  ROWS.forEach(r => {
+    const lab1 = `${r.l}${r.u && !r.unit ? ` <small>${r.u}</small>` : ''}` + (r.est ? `<br><label class="est" title="勾选表示这是估计值，不是实际单据数据"><input type="checkbox" data-est="${r.k}" ${k.assumed && k.assumed[r.k] ? 'checked' : ''}>估计值</label>` : '');
+    h += `<tr><td class="lab" ${r.hint ? `data-tip="${esc(r.hint)}"` : ''}>${lab1}</td>`;
+    ['base', 'promo'].forEach(sk => {
+      const s = k[sk];
+      if (r.sel) h += `<td><select data-f="${r.k}" data-s="${sk}" style="width:100%">${r.sel.map(o => `<option value="${o[0]}" ${s[r.k] === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></td>`;
+      else if (r.labor) {
+        h += `<td><div class="unitsel"><select data-f="laborMode" data-s="${sk}" title="人工来源"><option value="manual" ${s.laborMode !== 'calc' ? 'selected' : ''}>手填</option><option value="calc" ${s.laborMode === 'calc' ? 'selected' : ''}>人工表</option><option value="none" ${s.laborMode === 'none' ? 'selected' : ''}>不计人工</option></select>` +
+          (s.laborMode === 'calc' ? `<input class="num ro" readonly data-ro="labor-${sk}" title="人工表里的每袋提成；固定人工和激励也已算进利润">` : s.laborMode === 'none' ? `<input class="num ro" readonly value="0" title="不计人工：这个方案不算任何人工">` : `<input class="num" data-f="labor" data-s="${sk}" value="${esc(s.labor)}" inputmode="decimal">`) + `</div></td>`;
+      } else if (r.unit) {
+        h += `<td><input class="num" data-f="purchase" data-s="${sk}" value="${esc(s.purchase)}" inputmode="decimal"><div class="unitsel" style="margin-top:3px"><select data-f="purchaseUnit" data-s="${sk}"><option value="bag" ${s.purchaseUnit !== 'box' ? 'selected' : ''}>元/袋</option><option value="box" ${s.purchaseUnit === 'box' ? 'selected' : ''}>元/箱</option></select>` +
+          (s.purchaseUnit === 'box' ? `<input class="num" style="width:64px" data-f="bagsPerBox" data-s="${sk}" value="${esc(s.bagsPerBox)}" title="每箱袋数"><small class="hint">袋/箱</small>` : '') + `</div></td>`;
+      } else h += `<td><input class="num" data-f="${r.k}" data-s="${sk}" value="${esc(s[r.k])}" inputmode="decimal"></td>`;
+    });
+    h += '</tr>';
+  });
+  h += `</table><div style="display:flex;gap:8px;margin-top:10px"><button class="btn small" id="cp-bp">基准 → 复制到促销</button><span class="hint" style="align-self:center">促销常见做法：先复制，再只改折扣和销量</span></div>`;
+  // 进阶：自定义项目
+  h += `<details class="adv" ${k.items.length || k.metrics.length || S._openAdv ? 'open' : ''} id="adv"><summary>进阶：自己加费用、补贴和计算方式（${k.items.length + k.metrics.length}）</summary>
+  <div class="hint" style="margin:6px 0">每加一项先选“性质”和“计法”，系统自动把它算进利润。金额可以直接填，也可以写公式。</div><div id="items">`;
+  k.items.forEach((it, i) => {
+    h += `<div class="item" data-i="${i}">
+      <div class="row3"><div><label>名称</label><input class="txt" data-it="name" value="${esc(it.name)}"></div>
+      <div><label>性质</label><select data-it="nature" style="width:100%"><option value="cost" ${it.nature === 'cost' ? 'selected' : ''}>成本</option><option value="subsidy" ${it.nature === 'subsidy' ? 'selected' : ''}>补贴</option><option value="ref" ${it.nature === 'ref' ? 'selected' : ''}>仅参考</option></select></div>
+      <div><label>计法</label><select data-it="method" style="width:100%"><option value="bag" ${it.method === 'bag' ? 'selected' : ''}>按袋</option><option value="order" ${it.method === 'order' ? 'selected' : ''}>按单</option><option value="pct" ${it.method === 'pct' ? 'selected' : ''}>按比例 %</option><option value="event" ${it.method === 'event' ? 'selected' : ''}>按活动</option></select></div>
+      <div><label>金额来源</label><select data-it="src" style="width:100%"><option value="num" ${it.src !== 'formula' ? 'selected' : ''}>直接填</option><option value="formula" ${it.src === 'formula' ? 'selected' : ''}>用公式</option></select></div></div>
+      <div class="row"><div><label style="color:var(--base)">基准</label><input class="${it.src === 'formula' ? 'txt' : 'num'}" data-iv="base" value="${esc(it.vals.base)}" placeholder="${it.src === 'formula' ? '如 =30/60*0.8' : ''}"></div>
+      <div><label style="color:var(--promo)">促销</label><input class="${it.src === 'formula' ? 'txt' : 'num'}" data-iv="promo" value="${esc(it.vals.promo)}" placeholder="${it.src === 'formula' ? '如 =30/60*0.8' : ''}"></div></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      ${it.method === 'order' ? `<label style="display:inline">每单袋数 <input class="num" style="width:70px;display:inline-block" data-it="bagsPerOrder" value="${esc(it.bagsPerOrder)}"></label>` : ''}
+      ${it.method === 'pct' ? `<label style="display:inline">比例乘以 <select data-it="pctBase"><option value="eff" ${it.pctBase !== 'list' ? 'selected' : ''}>有效售价</option><option value="list" ${it.pctBase === 'list' ? 'selected' : ''}>标价</option></select></label>` : ''}
+      <span class="err" data-err="${i}"></span><span class="grow" style="flex:1"></span><button class="btn small ghost" data-del="${i}">删除</button></div></div>`;
+  });
+  h += `</div><button class="btn small" id="it-add">+ 新增一项</button>
+  <div class="vars" style="margin-top:8px">公式可用：${['标价','商家折扣','有效售价','销量','采购','人工','冷链','损耗','扣点率','活动费'].map(v => `<code>${v}</code>`).join(' ')} 以及上面已加项目的名称；支持 + − × ÷ 、括号、IF(条件,是,否)、MIN、MAX、ROUND。</div>
+  <div style="margin-top:14px;font-weight:600;color:var(--t2)">自定义指标 <span class="hint">（只显示，不改变利润）</span></div><div id="metrics">`;
+  k.metrics.forEach((m, i) => {
+    h += `<div class="item" data-mi="${i}"><div class="row" style="grid-template-columns:1fr 2fr"><div><label>指标名</label><input class="txt" data-m="name" value="${esc(m.name)}"></div><div><label>公式</label><input class="txt" data-m="expr" value="${esc(m.expr)}" placeholder="如 场景利润 / 销量"></div></div><div style="display:flex"><span class="err" data-merr="${i}"></span><span style="flex:1"></span><button class="btn small ghost" data-mdel="${i}">删除</button></div></div>`;
+  });
+  h += `</div><button class="btn small" id="m-add">+ 新增指标</button>
+  <div class="vars" style="margin-top:6px">指标里还可以用：<code>收入</code> <code>单位贡献</code> <code>贡献利润</code> <code>固定费用</code> <code>场景利润</code> <code>利润率</code> <code>单位贡献率</code></div></details>`;
+  const el = $('#inputs'); el.innerHTML = h;
+  // 事件
+  el.querySelectorAll('[data-f]').forEach(inp => {
+    const f = inp.dataset.f, sk = inp.dataset.s;
+    const structural = ['laborMode', 'purchaseUnit'].includes(f);
+    inp.addEventListener(inp.tagName === 'SELECT' ? 'change' : 'input', () => { k[sk][f] = inp.value.trim(); save(); if (structural) renderInputs(); renderResults(); });
+  });
+  el.querySelectorAll('[data-est]').forEach(cb => cb.onchange = () => { k.assumed = k.assumed || {}; k.assumed[cb.dataset.est] = cb.checked; save(); renderResults(); });
+  $('#cp-bp').onclick = () => { k.promo = JSON.parse(JSON.stringify(k.base)); k.items.forEach(it => it.vals.promo = it.vals.base); save(); renderInputs(); renderResults(); toast('已把基准方案复制到促销方案'); };
+  $('#adv').ontoggle = e => { S._openAdv = e.target.open; };
+  el.querySelectorAll('.item[data-i]').forEach(box => {
+    const it = k.items[+box.dataset.i];
+    box.querySelectorAll('[data-it]').forEach(inp => {
+      const f = inp.dataset.it, structural = ['method', 'src'].includes(f);
+      inp.addEventListener(inp.tagName === 'SELECT' ? 'change' : 'input', () => {
+        it[f] = inp.value; if (f === 'src'){ it.vals = { base: '', promo: '' }; }
+        save(); if (structural) renderInputs(); renderResults();
+      });
+    });
+    box.querySelectorAll('[data-iv]').forEach(inp => inp.addEventListener('input', () => { it.vals[inp.dataset.iv] = inp.value.trim(); save(); renderResults(); }));
+  });
+  el.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { k.items.splice(+b.dataset.del, 1); save(); renderInputs(); renderResults(); });
+  $('#it-add').onclick = () => { k.items.push({ id: uid(), name: '新费用' + (k.items.length + 1), nature: 'cost', method: 'bag', src: 'num', pctBase: 'eff', bagsPerOrder: 6, vals: { base: 0, promo: 0 } }); S._openAdv = true; save(); renderInputs(); renderResults(); };
+  el.querySelectorAll('.item[data-mi]').forEach(box => {
+    const m = k.metrics[+box.dataset.mi];
+    box.querySelectorAll('[data-m]').forEach(inp => inp.addEventListener('input', () => { m[inp.dataset.m] = inp.value; save(); renderResults(); }));
+  });
+  el.querySelectorAll('[data-mdel]').forEach(b => b.onclick = () => { k.metrics.splice(+b.dataset.mdel, 1); save(); renderInputs(); renderResults(); });
+  $('#m-add').onclick = () => { k.metrics.push({ name: '每袋利润', expr: '场景利润 / 销量' }); S._openAdv = true; save(); renderInputs(); renderResults(); };
+  el.querySelectorAll('.vars code').forEach(c => c.onclick = () => { navigator.clipboard && navigator.clipboard.writeText(c.textContent); toast('已复制：' + c.textContent); });
+}
+
+/* ======================= 图表（手写 SVG） ======================= */
+const NS = 'http://www.w3.org/2000/svg';
+function waterfall(r, color){
+  const V = r.V;
+  const steps = [{ n: '收入', v: r.rev, t: 'total' },
+    { n: '采购', v: -r.purchase * V }, { n: '人工', v: -r.laborTotal, tip: r.lab ? `每袋提成 ${yuan(r.laborBag * V)}<br>固定人工 ${yuan(r.laborFixed)}` + (r.tier ? `<br>阶梯激励 ${yuan(r.tier)}` : '') : '' }, { n: '冷链', v: -r.cold * V }, { n: '损耗', v: -r.loss * V }, { n: '扣点', v: -r.commission * V }];
+  if (r.costBag) steps.push({ n: '其他成本', v: -r.costBag * V });
+  if (r.subBag) steps.push({ n: '每袋补贴', v: r.subBag * V });
+  steps.push({ n: '活动等费用', v: -(r.fee + r.costEvt), tip: `活动费 ${yuan(r.fee)}` + (r.costEvt ? `<br>按活动计成本 ${yuan(r.costEvt)}` : '') });
+  if (r.subEvt) steps.push({ n: '活动补贴', v: r.subEvt });
+  steps.push({ n: '利润', v: r.profit, t: 'total' });
+  let cum = 0; const bars = steps.map(s => { if (s.t){ const b = { ...s, y0: 0, y1: s.v }; cum = s.v; return b; } const b = { ...s, y0: cum, y1: cum + s.v }; cum += s.v; return b; });
+  const W = 620, H = 270, L = 58, R = 10, T = 18, B = 34;
+  const lo = Math.min(0, ...bars.map(b => Math.min(b.y0, b.y1))), hi = Math.max(0, ...bars.map(b => Math.max(b.y0, b.y1)));
+  const y = v => T + (hi - v) / (hi - lo || 1) * (H - T - B), bw = (W - L - R) / bars.length;
+  let g = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="利润瀑布图">`;
+  niceTicks(lo, hi, 4).forEach(t => { g += `<line x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}" stroke="#eceae6"/><text x="${L - 6}" y="${y(t) + 4}" text-anchor="end" font-size="11" fill="#8a8984">${short(t)}</text>`; });
+  g += `<line x1="${L}" x2="${W - R}" y1="${y(0)}" y2="${y(0)}" stroke="#9a9a94"/>`;
+  bars.forEach((b, i) => {
+    const x = L + i * bw + bw * 0.16, w = bw * 0.68, top = y(Math.max(b.y0, b.y1)), hgt = Math.max(1, Math.abs(y(b.y0) - y(b.y1)));
+    const fill = b.t ? (b.v < 0 ? 'var(--neg)' : color) : (b.v >= 0 ? 'var(--up)' : 'var(--dec)');
+    const tip = `<b>${b.n}</b> ${b.t ? '' : (b.v >= 0 ? '+' : '−')}${yuan(Math.abs(b.v)).replace('-', '')}` + (b.tip ? '<br>' + b.tip : '') + (!b.t && r.rev ? `<br>占收入 ${pct(Math.abs(b.v) / r.rev)}` : '');
+    g += `<rect x="${x}" y="${top}" width="${w}" height="${hgt}" rx="3" fill="${fill}" data-tip="${esc(tip)}"/>`;
+    if (i < bars.length - 1){ const ny = y(b.t ? b.y1 : b.y1); g += `<line x1="${x + w}" x2="${x + bw}" y1="${ny}" y2="${ny}" stroke="#b5b4ae" stroke-dasharray="2 2"/>`; }
+    const lbl = b.t ? short(b.v) : (b.v >= 0 ? '+' : '−') + short(Math.abs(b.v));
+    if (b.t || Math.abs(b.v) / (hi - lo || 1) > 0.025) g += `<text x="${x + w / 2}" y="${top - 4}" text-anchor="middle" font-size="11" fill="${b.t ? '#1b1b1a' : '#52514e'}" font-weight="${b.t ? 700 : 400}">${lbl}</text>`;
+    g += `<text x="${x + w / 2}" y="${H - B + 16}" text-anchor="middle" font-size="11.5" fill="#52514e">${b.n}</text>`;
+  });
+  return g + '</svg>';
+}
+function compareBars(rows){ // rows: [{n, v, c}]
+  const W = 380, H = 40 + rows.length * 46, L = 70, R = 70;
+  const lo = Math.min(0, ...rows.map(r => r.v)), hi = Math.max(0, ...rows.map(r => r.v));
+  const x = v => L + (v - lo) / (hi - lo || 1) * (W - L - R);
+  let g = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="利润对比">`;
+  rows.forEach((r, i) => {
+    const yy = 14 + i * 46, x0 = x(Math.min(0, r.v)), w = Math.max(2, Math.abs(x(r.v) - x(0)));
+    g += `<text x="${L - 8}" y="${yy + 19}" text-anchor="end" font-size="12.5" fill="#52514e">${r.n}</text>`;
+    g += `<rect x="${x0}" y="${yy + 4}" width="${w}" height="24" rx="4" fill="${r.v < 0 ? 'var(--neg)' : r.c}" data-tip="<b>${r.n}</b> ${yuan(r.v)}"/>`;
+    g += `<text x="${r.v >= 0 ? x(r.v) + 6 : x0 - 6}" y="${yy + 21}" text-anchor="${r.v >= 0 ? 'start' : 'end'}" font-size="12.5" font-weight="700" fill="#1b1b1a">${yuan(r.v)}</text>`;
+  });
+  g += `<line x1="${x(0)}" x2="${x(0)}" y1="8" y2="${H - 22}" stroke="#9a9a94"/>`;
+  return g + '</svg>';
+}
+function tornado(list){
+  if (!list.length) return '<div class="hint">暂无数据</div>';
+  const W = 440, rowH = 28, H = 30 + list.length * rowH, L = 64, R = 44, mid = L + (W - L - R) / 2;
+  const m = Math.max(...list.map(d => Math.max(Math.abs(d.up), Math.abs(d.dn)))) || 1, sc = v => v / m * (W - L - R) / 2 * 0.74;
+  let g = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="敏感性分析">`;
+  g += `<text x="${mid - 8}" y="12" text-anchor="end" font-size="11" fill="#8a8984">← 利润减少</text><text x="${mid + 8}" y="12" font-size="11" fill="#8a8984">利润增加 →</text>`;
+  list.forEach((d, i) => {
+    const yy = 22 + i * rowH;
+    g += `<text x="${L - 8}" y="${yy + 15}" text-anchor="end" font-size="12" fill="#52514e">${d.name}</text>`;
+    [['up', '+10%', 'var(--base)'], ['dn', '−10%', '#86b6ef']].forEach(([k, lab, c]) => {
+      const v = d[k], w = Math.abs(sc(v)), xx = v >= 0 ? mid : mid - w;
+      g += `<rect x="${xx}" y="${yy + 3}" width="${Math.max(1, w)}" height="17" rx="3" fill="${c}" data-tip="<b>${d.name} ${lab}</b><br>利润 ${v >= 0 ? '+' : ''}${yuan(v)}"/>`;
+    });
+    g += `<text x="${W - R}" y="${yy + 15}" text-anchor="end" font-size="11" fill="#8a8984">±${short(d.span / 2)}</text>`;
+  });
+  g += `<line x1="${mid}" x2="${mid}" y1="18" y2="${H - 4}" stroke="#9a9a94"/>`;
+  return g + '</svg>';
+}
+function priceChart(pc, color){
+  if (!pc || !pc.pts.length) return '';
+  const W = 440, H = 240, L = 52, R = 14, T = 16, B = 34, pts = pc.pts;
+  const xs = pts.map(p => p.p), ys = pts.map(p => p.profit);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), lo = Math.min(0, ...ys), hi = Math.max(0, ...ys);
+  const X = v => L + (v - x0) / (x1 - x0) * (W - L - R), Y = v => T + (hi - v) / (hi - lo || 1) * (H - T - B);
+  let g = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="售价与利润" class="pchart">`;
+  niceTicks(lo, hi, 4).forEach(t => { g += `<line x1="${L}" x2="${W - R}" y1="${Y(t)}" y2="${Y(t)}" stroke="#eceae6"/><text x="${L - 6}" y="${Y(t) + 4}" text-anchor="end" font-size="11" fill="#8a8984">${short(t)}</text>`; });
+  niceTicks(x0, x1, 4).forEach(t => { if (t >= x0 && t <= x1) g += `<text x="${X(t)}" y="${H - B + 16}" text-anchor="middle" font-size="11" fill="#8a8984">¥${+t.toFixed(1)}</text>`; });
+  g += `<line x1="${L}" x2="${W - R}" y1="${Y(0)}" y2="${Y(0)}" stroke="#9a9a94"/>`;
+  g += `<polyline fill="none" stroke="${color}" stroke-width="2" points="${pts.map(p => X(p.p) + ',' + Y(p.profit)).join(' ')}"/>`;
+  if (pc.bePrice) g += `<line x1="${X(pc.bePrice)}" x2="${X(pc.bePrice)}" y1="${T}" y2="${H - B}" stroke="#8a8984" stroke-dasharray="3 3"/><text x="${X(pc.bePrice) + 4}" y="${T + 10}" font-size="11" fill="#52514e">保本价 ¥${pc.bePrice.toFixed(2)}</text>`;
+  g += `<circle cx="${X(pc.cur)}" cy="${Y(pc.curProfit)}" r="5" fill="${color}" stroke="#fff" stroke-width="2"/><text x="${X(pc.cur)}" y="${Y(pc.curProfit) - 9}" text-anchor="middle" font-size="11" font-weight="700">当前</text>`;
+  pts.forEach((p, i) => { const w = (W - L - R) / pts.length; g += `<rect x="${X(p.p) - w / 2}" y="${T}" width="${w}" height="${H - T - B}" fill="transparent" data-tip="标价 ¥${p.p.toFixed(2)}<br>利润 ${yuan(p.profit)}"/>`; });
+  return g + '</svg>';
+}
+function hbars(rows, color){ // [{n,v,sub}]
+  const W = 520, rowH = 30, H = 10 + rows.length * rowH, L = 90, R = 90, m = Math.max(...rows.map(r => r.v), 1);
+  let g = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img">`;
+  rows.forEach((r, i) => { const yy = 6 + i * rowH, w = r.v / m * (W - L - R);
+    g += `<text x="${L - 8}" y="${yy + 15}" text-anchor="end" font-size="12" fill="#52514e">${r.n}</text><rect x="${L}" y="${yy + 3}" width="${Math.max(1, w)}" height="18" rx="3" fill="${color}" data-tip="<b>${r.n}</b> ${yuan(r.v)}${r.sub ? '<br>' + r.sub : ''}"/><text x="${L + w + 6}" y="${yy + 16}" font-size="12" fill="#1b1b1a">${yuan(r.v)}${r.sub ? ' <tspan fill="#8a8984">' + r.sub + '</tspan>' : ''}</text>`; });
+  return g + '</svg>';
+}
+function groupBars(rows){ // [{n, b, p}]
+  const W = 640, gh = 58, H = 16 + rows.length * gh, L = 120, R = 80;
+  const all = rows.flatMap(r => [r.b, r.p]), lo = Math.min(0, ...all), hi = Math.max(0, ...all);
+  const x = v => L + (v - lo) / (hi - lo || 1) * (W - L - R);
+  let g = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="各SKU利润">`;
+  rows.forEach((r, i) => { const yy = 8 + i * gh;
+    g += `<text x="${L - 8}" y="${yy + 26}" text-anchor="end" font-size="12.5" fill="#52514e">${esc(r.n)}</text>`;
+    [['b', 'var(--base)', '基准'], ['p', 'var(--promo)', '促销']].forEach(([k, c, lab], j) => { const v = r[k], x0 = x(Math.min(0, v)), w = Math.max(2, Math.abs(x(v) - x(0)));
+      g += `<rect x="${x0}" y="${yy + 4 + j * 22}" width="${w}" height="18" rx="3" fill="${v < 0 ? 'var(--neg)' : c}" data-tip="<b>${esc(r.n)} · ${lab}</b><br>场景利润 ${yuan(v)}"/><text x="${v >= 0 ? x(v) + 5 : x0 - 5}" y="${yy + 17 + j * 22}" text-anchor="${v >= 0 ? 'start' : 'end'}" font-size="11.5">${yuan(v)}</text>`; }); });
+  g += `<line x1="${x(0)}" x2="${x(0)}" y1="4" y2="${H - 4}" stroke="#9a9a94"/>`;
+  return g + '</svg>';
+}
+function niceTicks(lo, hi, n){ const span = hi - lo || 1, step0 = span / n, mag = Math.pow(10, Math.floor(Math.log10(step0))), step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => s >= step0) || step0; const out = []; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(+v.toFixed(6)); return out; }
+function short(v){ const a = Math.abs(v); const s = a >= 10000 ? (a / 10000).toFixed(a >= 100000 ? 0 : 1) + '万' : a >= 1000 ? Math.round(a).toLocaleString('zh-CN') : +a.toFixed(a < 10 ? 2 : 0) + ''; return (v < 0 ? '-' : '') + s; }
+
+/* ======================= 利润测算：结果区 ======================= */
+function renderResults(){
+  const k = sku(), L = S.labor;
+  const b = Engine.compute(k, 'base', L), p = Engine.compute(k, 'promo', L);
+  // 输入框状态
+  ['base', 'promo'].forEach(sk => {
+    const r = sk === 'base' ? b : p, s = k[sk];
+    document.querySelectorAll(`#inputs [data-s="${sk}"].num`).forEach(inp => inp.classList.toggle('miss', ['list','volume','purchase','labor','cold','loss','rate'].includes(inp.dataset.f) && inp.value.trim() === ''));
+    const ro = document.querySelector(`[data-ro="labor-${sk}"]`); if (ro) ro.value = r.ok ? r.laborBag.toFixed(2) : '';
+    if (r.ok) k.items.forEach((it, i) => { const e = document.querySelector(`[data-err="${i}"]`); if (e){ const msg = r.errors.find(x => x.startsWith((it.name || '自定义项') + '：')); if (sk === 'base') e.textContent = msg || ''; else if (msg && !e.textContent) e.textContent = '促销：' + msg; } });
+    if (r.ok) r.metrics.forEach((m, i) => { const e = document.querySelector(`[data-merr="${i}"]`); if (e && sk === 'base') e.textContent = m.error || ''; });
+  });
+  const el = $('#results');
+  if (!b.ok || !p.ok){
+    el.innerHTML = `<h2>测算结果</h2><div class="headline bad">${esc((!b.ok ? '基准方案：' + b.errors[0] : '') + (!b.ok && !p.ok ? '；' : '') + (!p.ok ? '促销方案：' + p.errors[0] : ''))}</div><div class="hint">缺少的格子已用红框标出。</div>`;
+    $('#advanced').innerHTML = ''; return;
+  }
+  const an = Engine.analyze(k, L, S.settings), head = an[0], eq = p.minVolume(b.profit);
+  const view = S.view === 'base' ? b : p, vc = S.view === 'base' ? 'var(--base)' : 'var(--promo)';
+  const kpi = (title, fb, fp, extra) => `<div class="kpi"><div class="k">${title}</div><div class="v"><span class="dot" style="background:var(--promo);width:10px;height:10px" title="促销方案"></span>${fp}</div><div class="v2"><span class="dot" style="background:var(--base)"></span>基准 <b>${fb}</b>${extra || ''}</div></div>`;
+  let h = `<h2>${esc(k.name)} · 测算结果 <span class="sub"><span class="dot" style="background:var(--promo)"></span>大字为促销方案 · ${esc(S.meta.channel || '')} ${esc(S.meta.month || '')}</span></h2>
+  <div class="kpis">
+    ${kpi('销售收入', yuan(b.rev), yuan(p.rev))}
+    ${kpi('预计场景利润', yuan(b.profit), yuan(p.profit), `<br>差额 <b style="color:${p.profit - b.profit < 0 ? 'var(--bad)' : 'var(--good)'}">${p.profit - b.profit >= 0 ? '+' : ''}${yuan(p.profit - b.profit)}</b>`)}
+    ${kpi('场景利润率', pct(b.margin), pct(p.margin))}
+    ${kpi('盈亏平衡销量', bags(b.be), bags(p.be), `<br>追平基准需 <b>${bags(eq)}</b>`)}
+  </div>
+  <div class="headline ${head.level === 'good' ? 'good' : head.level === 'bad' ? 'bad' : ''}">${esc(head.text)}</div>
+  ${laborImpact(k, b, p)}
+  <div class="charts">
+    <div><div style="display:flex;justify-content:space-between;align-items:center"><div><div class="chart-title">利润从哪里来：${S.view === 'base' ? '基准' : '促销'}方案</div><div class="chart-sub">从收入逐项扣到利润，鼠标停在柱子上看明细</div></div>
+      <div class="seg"><button data-v="base" class="${S.view === 'base' ? 'on' : ''}">基准</button><button data-v="promo" class="${S.view !== 'base' ? 'on' : ''}">促销</button></div></div>
+      ${waterfall(view, vc)}
+      <div class="legend"><span><i style="background:${vc}"></i>收入 / 利润</span><span><i style="background:var(--dec)"></i>扣减</span><span><i style="background:var(--up)"></i>补贴</span></div></div>
+    <div><div class="chart-title">基准 vs 促销</div><div class="chart-sub">预计场景利润</div>
+      ${compareBars([{ n: '基准方案', v: b.profit, c: 'var(--base)' }, { n: '促销方案', v: p.profit, c: 'var(--promo)' }])}
+      <div class="legend"><span><i style="background:var(--base)"></i>基准</span><span><i style="background:var(--promo)"></i>促销</span></div>
+      <div class="chart-title" style="margin-top:12px">分析提示</div>
+      <ul class="notes">${an.slice(1).map(a => `<li><span class="tag ${a.level}">${{ good: '良好', warn: '注意', bad: '风险', info: '提示' }[a.level]}</span><span>${esc(a.text)}</span></li>`).join('') || '<li><span class="hint">没有需要特别注意的地方。阈值可在“设置与说明”里调整。</span></li>'}</ul>
+    </div>
+  </div>`;
+  if (b.metrics.length) h += `<div style="margin-top:12px"><div class="chart-title">自定义指标</div><table class="trace"><tr><th>指标</th><th>基准</th><th>促销</th></tr>${b.metrics.map((m, i) => `<tr><td>${esc(m.name)}</td><td>${m.error ? '<span style="color:var(--bad)">' + esc(m.error) + '</span>' : fmtMetric(m.value)}</td><td>${p.metrics[i].error ? '—' : fmtMetric(p.metrics[i].value)}</td></tr>`).join('')}</table></div>`;
+  el.innerHTML = h;
+  el.querySelectorAll('.seg button').forEach(bt => bt.onclick = () => { S.view = bt.dataset.v; save(); renderResults(); });
+  renderAdvanced(k, b, p);
+}
+function laborImpact(k, b, p){
+  const L = S.labor, nb = Engine.compute(k, 'base', L, { laborMode: 'none' }), np = Engine.compute(k, 'promo', L, { laborMode: 'none' });
+  const src = s => s.laborMode === 'calc' ? '人工表' : s.laborMode === 'none' ? '不计人工' : '手填';
+  const cell = (n, r, nr, s, c) => `<div style="flex:1;min-width:220px"><span class="dot" style="background:${c}"></span><b>${n}</b>（${src(s)}）：含人工 <b>${yuan(r.profit)}</b> · 不含人工 ${yuan(nr.profit)} · 人工 <b>${yuan(r.laborTotal)}</b>${r.rev ? '，占收入 ' + pct(r.laborTotal / r.rev) : ''}</div>`;
+  return `<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--t2);padding:8px 2px 0">${cell('基准', b, nb, k.base, 'var(--base)')}${cell('促销', p, np, k.promo, 'var(--promo)')}</div>`;
+}
+function fmtMetric(v){ return Math.abs(v) < 1 && v !== 0 ? (+v.toFixed(4)).toString() : (+v.toFixed(2)).toLocaleString('zh-CN'); }
+function renderAdvanced(k, b, p){
+  const L = S.labor, view = S.view === 'base' ? 'base' : 'promo', r = view === 'base' ? b : p, color = view === 'base' ? 'var(--base)' : 'var(--promo)';
+  const sens = Engine.sensitivity(k, view, L), pc = Engine.priceCurve(k, view, L);
+  const tr = (n, vb, vp, f, key) => `<tr class="${key ? 'key' : ''}"><td>${n}</td><td>${vb}</td><td>${vp}</td><td class="f">${f}</td></tr>`;
+  let h = `<details ${S._openAdv2 ? 'open' : ''} id="adv2"><summary style="cursor:pointer;font-weight:700">进阶分析：敏感性、售价曲线、计算明细</summary>
+  <div class="charts" style="grid-template-columns:1fr 1fr">
+   <div><div class="chart-title">哪个参数最影响利润（${view === 'base' ? '基准' : '促销'}）</div><div class="chart-sub">每次只调整一项 ±10%，其他参数固定</div>${tornado(sens)}
+     <div class="legend"><span><i style="background:var(--base)"></i>参数 +10%</span><span><i style="background:#86b6ef"></i>参数 −10%</span></div></div>
+   <div><div class="chart-title">标价调到多少还划算（${view === 'base' ? '基准' : '促销'}）</div><div class="chart-sub">销量固定在当前值，只改标价</div>${priceChart(pc, color)}</div>
+  </div>
+  <div class="chart-title" style="margin-top:14px">计算明细（怎么算出来的）</div>
+  <table class="trace"><tr><th>项目</th><th>基准</th><th>促销</th><th style="text-align:left">算法</th></tr>
+  ${tr('有效售价', yuan2(b.eff), yuan2(p.eff), '标价 − 商家承担折扣')}
+  ${tr('销售收入', yuan(b.rev), yuan(p.rev), '有效售价 × 销量', 1)}
+  ${tr('采购 / 袋', yuan2(b.purchase), yuan2(p.purchase), '按箱录入时 = 箱价 ÷ 每箱袋数')}
+  ${tr('人工 / 袋', yuan2(b.laborBag), yuan2(p.laborBag), '手填，或来自人工成本页（提成部分）')}
+  ${tr('人工合计', yuan(b.laborTotal), yuan(p.laborTotal), '每袋人工 × 销量 + 固定人工 + 阶梯激励')}
+  ${tr('冷链 / 袋', yuan2(b.cold), yuan2(p.cold), '')}
+  ${tr('损耗 / 袋', yuan2(b.loss), yuan2(p.loss), '')}
+  ${tr('渠道扣点 / 袋', yuan2(b.commission), yuan2(p.commission), '扣点率 × ' + (k.promo.rateBase === 'list' ? '标价' : '有效售价') + '（按合同口径）')}
+  ${b.costBag || p.costBag ? tr('其他每袋成本', yuan2(b.costBag), yuan2(p.costBag), '自定义成本（按袋/按单/按比例）') : ''}
+  ${b.subBag || p.subBag ? tr('每袋补贴', yuan2(b.subBag), yuan2(p.subBag), '自定义补贴') : ''}
+  ${tr('单位贡献', yuan2(b.unit), yuan2(p.unit), '有效售价 − 各项每袋成本 + 每袋补贴', 1)}
+  ${tr('贡献利润', yuan(b.contribution), yuan(p.contribution), '单位贡献 × 销量')}
+  ${tr('固定费用', yuan(b.fixed), yuan(p.fixed), '活动费 + 固定人工 + 阶梯激励 + 按活动计成本')}
+  ${b.subEvt || p.subEvt ? tr('活动补贴', yuan(b.subEvt), yuan(p.subEvt), '按活动总额计的补贴') : ''}
+  ${tr('预计场景利润', yuan(b.profit), yuan(p.profit), '贡献利润 − 固定费用 + 活动补贴', 1)}
+  ${tr('场景利润率', pct(b.margin), pct(p.margin), '场景利润 ÷ 收入')}
+  ${tr('单位贡献率', pct(b.unitRate), pct(p.unitRate), '单位贡献 ÷ 有效售价')}
+  ${tr('盈亏平衡销量', bags(b.be), bags(p.be), '利润 ≥ 0 的最低销量（已考虑阶梯激励）')}
+  ${tr('追平基准所需销量', '—', bags(p.minVolume(b.profit)), '促销利润 ≥ 基准利润的最低销量')}
+  </table></details>`;
+  $('#advanced').innerHTML = h;
+  $('#adv2').ontoggle = e => { S._openAdv2 = e.target.open; };
+}
+
+/* ======================= 人工成本页 ======================= */
+function renderLaborIn(){
+  const L = S.labor;
+  let h = `<h2>人工成本设置 <span class="sub">先选一套预设，再改数字</span></h2><div class="preset">` +
+    Object.entries(LABOR_PRESETS).map(([k, p]) => `<button class="btn small ${L.preset === k ? 'on' : ''}" data-pre="${k}">${p.label}</button>`).join('') + `</div>
+  <table class="edit"><tr><th>岗位</th><th>人数</th><th>月薪</th><th>社保公积金%</th><th>绩效基数</th><th>绩效系数</th><th></th></tr>` +
+    L.roles.map((r, i) => `<tr data-r="${i}">${['name', 'count', 'salary', 'social', 'perfBase', 'perfCoef'].map(f => `<td><input class="${f === 'name' ? 'txt' : 'num'}" data-rf="${f}" value="${esc(r[f])}"></td>`).join('')}<td><button class="btn small ghost" data-rdel="${i}">删</button></td></tr>`).join('') +
+    `</table><button class="btn small" id="r-add" style="margin-top:6px">+ 新增岗位</button>
+  <table class="inp" style="margin-top:14px">
+    <tr><td class="lab">每袋提成 <small>元/袋</small></td><td><input class="num" data-lf="piece" value="${esc(L.piece)}"></td></tr>
+    <tr><td class="lab">收入提成比例 <small>%</small></td><td><input class="num" data-lf="revPct" value="${esc(L.revPct)}"></td></tr>
+  </table>
+  <div style="margin-top:14px;font-weight:600;color:var(--t2)">各商品分摊比例 <span class="hint">团队月人工里，算到这个商品的比例（按工时或销量估）</span></div>
+  <table class="edit"><tr><th>商品</th><th>分摊比例 %</th><th>算到该商品的固定人工</th></tr>` +
+    S.skus.map((x, i) => `<tr><td>${esc(x.name)}</td><td><input class="num" data-alloc="${i}" value="${esc(x.laborAlloc ?? L.alloc)}"></td><td class="hint" data-allocv="${i}"></td></tr>`).join('') +
+    `<tr><td class="hint">合计</td><td class="hint" id="alloc-sum"></td><td></td></tr></table>
+  <div style="margin-top:14px;font-weight:600;color:var(--t2)">阶梯激励 <span class="hint">销量达到门槛发一笔奖励，取达到的最高一档</span></div>
+  <table class="edit"><tr><th>销量门槛（袋）</th><th>奖励金额（元）</th><th></th></tr>` +
+    (L.tiers || []).map((t, i) => `<tr data-t="${i}"><td><input class="num" data-tf="threshold" value="${esc(t.threshold)}"></td><td><input class="num" data-tf="amount" value="${esc(t.amount)}"></td><td><button class="btn small ghost" data-tdel="${i}">删</button></td></tr>`).join('') +
+    `</table><button class="btn small" id="t-add" style="margin-top:6px">+ 新增一档</button>`;
+  const el = $('#labor-in'); el.innerHTML = h;
+  el.querySelectorAll('[data-pre]').forEach(b => b.onclick = () => { const p = JSON.parse(JSON.stringify(LABOR_PRESETS[b.dataset.pre])); Object.assign(L, { preset: b.dataset.pre, roles: p.roles, piece: p.piece, revPct: p.revPct, tiers: p.tiers }); save(); renderLaborIn(); renderLaborOut(); toast('已套用：' + p.label); });
+  el.querySelectorAll('tr[data-r]').forEach(tr => tr.querySelectorAll('[data-rf]').forEach(inp => inp.oninput = () => { L.roles[+tr.dataset.r][inp.dataset.rf] = inp.value; L.preset = ''; save(); renderLaborOut(); }));
+  el.querySelectorAll('[data-rdel]').forEach(b => b.onclick = () => { L.roles.splice(+b.dataset.rdel, 1); save(); renderLaborIn(); renderLaborOut(); });
+  $('#r-add').onclick = () => { L.roles.push({ name: '新岗位', count: 1, salary: 4000, social: 30, perfBase: 0, perfCoef: 0 }); save(); renderLaborIn(); renderLaborOut(); };
+  el.querySelectorAll('[data-alloc]').forEach(inp => inp.oninput = () => { S.skus[+inp.dataset.alloc].laborAlloc = inp.value; save(); renderAllocHints(); renderLaborOut(); });
+  renderAllocHints();
+  el.querySelectorAll('[data-lf]').forEach(inp => inp.oninput = () => { L[inp.dataset.lf] = inp.value; save(); renderLaborOut(); });
+  el.querySelectorAll('tr[data-t]').forEach(tr => tr.querySelectorAll('[data-tf]').forEach(inp => inp.oninput = () => { L.tiers[+tr.dataset.t][inp.dataset.tf] = inp.value; save(); renderLaborOut(); }));
+  el.querySelectorAll('[data-tdel]').forEach(b => b.onclick = () => { L.tiers.splice(+b.dataset.tdel, 1); save(); renderLaborIn(); renderLaborOut(); });
+  $('#t-add').onclick = () => { (L.tiers = L.tiers || []).push({ threshold: 1000, amount: 500 }); save(); renderLaborIn(); renderLaborOut(); };
+}
+function renderAllocHints(){
+  const team = Engine.laborTeam(S.labor).team; let sum = 0;
+  S.skus.forEach((x, i) => { const a = +(x.laborAlloc ?? S.labor.alloc) || 0; sum += a; const el = document.querySelector(`[data-allocv="${i}"]`); if (el) el.textContent = yuan(team * a / 100) + (['base','promo'].some(k => x[k].laborMode === 'calc') ? '' : '（未使用人工表）'); });
+  const el = $('#alloc-sum'); if (el){ el.textContent = sum + '%' + (sum > 100 ? '  ⚠ 超过 100%，固定人工被重复计算' : ''); el.style.color = sum > 100 ? 'var(--bad)' : ''; }
+}
+function renderLaborOut(){
+  const L = S.labor, k = sku(), sk = S.laborView || 'promo', s = k[sk];
+  const V = +s.volume || 0, eff = (+s.list || 0) - (+s.discount || 0), lab = Engine.laborFor(L, V, eff, k.laborAlloc), rev = eff * V;
+  const inUse = s.laborMode === 'calc';
+  const r = Engine.compute(k, sk, L, { laborMode: 'calc' });
+  const comp = [{ n: '底薪', v: lab.base }, { n: '社保公积金', v: lab.social }, { n: '绩效', v: lab.perf }, { n: '提成', v: lab.commission }, { n: '阶梯激励', v: lab.bonus }];
+  const fixedShare = lab.total ? (lab.fixed + lab.bonus) / lab.total : 0;
+  let h = `<h2>人工成本结果</h2>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">按 <select id="lv-sku">${S.skus.map((x, i) => `<option value="${i}" ${i === S.active ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select>
+   <div class="seg"><button data-lv="base" class="${sk === 'base' ? 'on' : ''}">基准</button><button data-lv="promo" class="${sk === 'promo' ? 'on' : ''}">促销</button></div> 的销量 <b>${V.toLocaleString()} 袋</b> 计算</div>
+  <div class="kpis">
+    <div class="kpi"><div class="k">团队月人工（未分摊）</div><div class="v">${yuan(lab.team)}</div><div class="v2">${lab.people} 人</div></div>
+    <div class="kpi"><div class="k">算到「${esc(k.name)}」的人工</div><div class="v">${yuan(lab.total)}</div><div class="v2">分摊 ${pct(lab.alloc)} · 固定 ${yuan(lab.fixed)} · 激励 ${yuan(lab.bonus)}</div></div>
+    <div class="kpi"><div class="k">每袋人工</div><div class="v">${V ? yuan2(lab.total / V) : '—'}</div><div class="v2">其中提成 ${yuan2(lab.perBag)}</div></div>
+    <div class="kpi"><div class="k">人工占收入</div><div class="v">${rev ? pct(lab.total / rev) : '—'}</div><div class="v2">人均产出 ${lab.people ? Math.round(V / lab.people).toLocaleString() : '—'} 袋</div></div>
+  </div>
+  <div class="headline">人工占收入 ${rev ? pct(lab.total / rev) : '—'}，随销量变动的提成只占约 ${lab.total ? pct(lab.commission / lab.total) : '—'}，其余 ${pct(fixedShare)} 是固定或达标才发的部分。</div>
+  <div class="chart-title" style="margin-top:12px">人工构成（算到这个商品的部分）</div><div style="max-width:620px">${hbars(comp, 'var(--base)')}</div>`;
+  const cliffs = Engine.analyze(k, L, S.settings).filter(a => a.text.startsWith('阶梯激励临界点') || a.text.startsWith('人工占收入'));
+  if (inUse && cliffs.length) h += `<ul class="notes">${cliffs.map(a => `<li><span class="tag warn">注意</span><span>${esc(a.text)}</span></li>`).join('')}</ul>`;
+  h += `<div style="margin-top:14px;padding:12px;border-radius:10px;background:#f6f6f4">
+    ${inUse ? `✅ 「${esc(k.name)} · ${sk === 'base' ? '基准' : '促销'}方案」正在使用这张人工表，利润为 <b>${r.ok ? yuan(r.profit) : '—'}</b>。在这里改数字，利润页会同步更新。` : `「${esc(k.name)} · ${sk === 'base' ? '基准' : '促销'}方案」目前${s.laborMode === 'none' ? '不计人工' : '是手填人工 ' + yuan2(+s.labor) + '/袋'}。若改用人工表，利润将变为 <b>${r.ok ? yuan(r.profit) : '—'}</b>。`}
+    <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn small ${inUse ? 'on' : 'primary'}" data-use="calc" ${inUse ? 'disabled' : ''}>用人工表</button>
+      <button class="btn small" data-use="manual" ${s.laborMode === 'manual' || !s.laborMode ? 'disabled' : ''}>改回手填</button>
+      <button class="btn small" data-use="none" ${s.laborMode === 'none' ? 'disabled' : ''}>不计人工</button></div></div>`;
+  const el = $('#labor-out'); el.innerHTML = h;
+  $('#lv-sku').onchange = e => { S.active = +e.target.value; save(); renderLaborOut(); };
+  el.querySelectorAll('[data-lv]').forEach(b => b.onclick = () => { S.laborView = b.dataset.lv; save(); renderLaborOut(); });
+  el.querySelectorAll('[data-use]').forEach(bt => bt.onclick = () => { s.laborMode = bt.dataset.use; save(); renderLaborOut(); renderAllocHints(); toast({ calc: '已把人工表用于该方案', manual: '已改回手填人工', none: '该方案不再计算人工' }[bt.dataset.use]); });
+}
+
+/* ======================= 汇总页 ======================= */
+function renderSum(){
+  const L = S.labor, rows = S.skus.map(k => ({ k, b: Engine.compute(k, 'base', L), p: Engine.compute(k, 'promo', L) }));
+  const ok = rows.filter(r => r.b.ok && r.p.ok), cf = +S.commonFee || 0;
+  const t = f => ok.reduce((a, r) => a + f(r), 0);
+  const tb = t(r => r.b.rev), tp = t(r => r.p.rev), pb = t(r => r.b.profit) - cf, pp = t(r => r.p.profit) - cf;
+  let h = `<h2>各 SKU 汇总 <span class="sub">同一渠道、同一月份；共同费用只登记一次，不分摊到单个 SKU</span></h2>
+  <table class="trace"><tr><th>SKU</th><th>基准收入</th><th>基准利润</th><th>基准利润率</th><th>促销收入</th><th>促销利润</th><th>促销利润率</th><th>促销 − 基准</th></tr>` +
+    rows.map(r => r.b.ok && r.p.ok ? `<tr><td>${esc(r.k.name)}</td><td>${yuan(r.b.rev)}</td><td>${yuan(r.b.profit)}</td><td>${pct(r.b.margin)}</td><td>${yuan(r.p.rev)}</td><td>${yuan(r.p.profit)}</td><td>${pct(r.p.margin)}</td><td style="color:${r.p.profit < r.b.profit ? 'var(--bad)' : 'var(--good)'}">${r.p.profit >= r.b.profit ? '+' : ''}${yuan(r.p.profit - r.b.profit)}</td></tr>` : `<tr><td>${esc(r.k.name)}</td><td colspan="7" style="text-align:left;color:var(--bad)">参数未填完整</td></tr>`).join('') +
+    `<tr class="key"><td>各 SKU 合计</td><td>${yuan(tb)}</td><td>${yuan(pb + cf)}</td><td></td><td>${yuan(tp)}</td><td>${yuan(pp + cf)}</td><td></td><td></td></tr>
+    <tr><td>共同费用 <input class="num" id="cf" style="width:110px;display:inline-block" value="${esc(S.commonFee)}"></td><td></td><td>−${yuan(cf)}</td><td></td><td></td><td>−${yuan(cf)}</td><td></td><td></td></tr>
+    <tr class="key"><td>汇总利润</td><td></td><td>${yuan(pb)}</td><td>${tb ? pct(pb / tb) : '—'}</td><td></td><td>${yuan(pp)}</td><td>${tp ? pct(pp / tp) : '—'}</td><td>${pp >= pb ? '+' : ''}${yuan(pp - pb)}</td></tr></table>
+  <div class="chart-title" style="margin-top:16px">哪款产品更赚钱</div><div class="chart-sub">各 SKU 预计场景利润（不含共同费用）</div>
+  <div style="max-width:760px">${groupBars(ok.map(r => ({ n: r.k.name, b: r.b.profit, p: r.p.profit })))}</div>
+  <div class="legend"><span><i style="background:var(--base)"></i>基准</span><span><i style="background:var(--promo)"></i>促销</span></div>`;
+  $('#sum').innerHTML = h;
+  $('#cf').oninput = e => { S.commonFee = e.target.value; save(); clearTimeout(renderSum.h); renderSum.h = setTimeout(() => { renderSum(); const c = $('#cf'); c.focus(); c.setSelectionRange(c.value.length, c.value.length); }, 400); };
+}
+
+/* ======================= 设置页 ======================= */
+function renderSet(){
+  const st = S.settings;
+  const rows = [['targetMargin', '目标利润率', '%', '场景利润率低于它时提示'], ['coldMax', '冷链占收入上限', '%', '超过时提示'], ['laborMax', '人工占收入上限', '%', '使用人工表时检查'], ['liftMax', '促销需多卖比例上限', '%', '追平基准所需销量比基准多出的比例'], ['assumedMax', '估计值占比上限', '%', '标为“估计值”的成本占比超过时提示']];
+  $('#set').innerHTML = `<h2>分析提示的判断标准 <span class="sub">由业务方设定；清空某一项就不再判断“偏高/偏低”</span></h2>` +
+    rows.map(r => `<div class="setrow"><div>${r[1]}</div><div><input class="num" data-st="${r[0]}" value="${esc(st[r[0]])}"></div><div class="hint">${r[2]} · ${r[3]}</div></div>`).join('') +
+    `<h2 style="margin-top:22px">使用说明</h2><div style="color:var(--t2);line-height:1.9">
+    1. 在“利润测算”选商品，改黄色格子（售价、销量、成本），右边立即出利润、图表和一句结论。<br>
+    2. 促销试算：点“基准 → 复制到促销”，再只改折扣和销量。折前价 + 折扣 和直接填折后价，结果一样。<br>
+    3. 人工成本：在“人工成本”页选预设 A / B / C 再改数字，并给每个商品填分摊比例；点“用人工表”后，利润会按人工表计算（含绩效、提成、阶梯激励）。想看不含人工的结果，选“不计人工”，人工表设置会保留。<br>
+    4. 自己加费用：展开“进阶”，新增一项，选性质（成本 / 补贴 / 参考）和计法（按袋 / 按单 / 按比例 / 按活动），金额可直接填或写公式，例如 <code>=30/60*0.8</code>。<br>
+    5. 导出 Excel：带公式，在 Excel 里改黄色格子会自动重算；“分析提示”表是导出时的文字结论。<br>
+    6. 数据只存在这台电脑的浏览器里。要换电脑或发给同事，用“保存方案”存成文件，对方用“打开方案”。<br>
+    7. 演示数据全部为假设，请换成采购单、结算单上的实际数字，并取消“估计值”勾选。</div>`;
+  document.querySelectorAll('[data-st]').forEach(inp => inp.oninput = () => { st[inp.dataset.st] = inp.value.trim(); save(); });
+}
+
+/* ======================= 渲染 ======================= */
+function renderAll(full){
+  const tab = document.querySelector('nav.tabs button.on').dataset.tab;
+  if (tab === 'profit'){ renderChips(); renderInputs(); renderResults(); }
+  if (tab === 'labor'){ renderLaborIn(); renderLaborOut(); }
+  if (tab === 'sum') renderSum();
+  if (tab === 'set') renderSet();
+}
+renderAll(true);
+</script>
+</body>
+</html>
