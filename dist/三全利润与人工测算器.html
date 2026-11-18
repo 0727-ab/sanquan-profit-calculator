@@ -108,7 +108,31 @@ table.edit td{padding:3px 4px}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1b1b1a;color:#fff;padding:8px 16px;border-radius:8px;display:none;z-index:60}
 .setrow{display:grid;grid-template-columns:260px 120px 1fr;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid #f0efec}
 .foot{color:var(--t3);font-size:12px;margin-top:20px;text-align:center}
-@media (max-width:1100px){.layout,.charts,.grid2{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
+
+.drop{border:2px dashed var(--line2);border-radius:14px;padding:36px;text-align:center;background:#fff;cursor:pointer;transition:.15s}
+.drop.over,.drop:hover{border-color:var(--base);background:#f3f8fe}
+.drop b{font-size:16px}
+.chk{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:13px;margin-top:6px}
+.ok{color:var(--good)} .warnc{color:var(--warn)} .badc{color:var(--bad)}
+.ctrl{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.ctrl label{font-size:13px;color:var(--t2);display:flex;gap:6px;align-items:center}
+.custs{display:flex;gap:6px;flex-wrap:wrap}
+.custs label{border:1px solid var(--line2);border-radius:999px;padding:3px 10px;cursor:pointer;background:#fff;font-size:13px}
+.custs label.on{background:var(--t1);color:#fff;border-color:var(--t1)}
+.custs input{display:none}
+.rv2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.rvcol h3{font-size:14px;margin:0 0 8px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.mini{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sub-h{font-size:13px;font-weight:700;margin:14px 0 4px;color:var(--t1)}
+table.fee{width:100%;border-collapse:collapse;font-size:13px}
+table.fee td,table.fee th{padding:4px 6px;border-bottom:1px solid #efeeea;text-align:right;font-variant-numeric:tabular-nums}
+table.fee td:first-child,table.fee th:first-child{text-align:left}
+table.fee tr.dr td{color:var(--t3);font-size:12px;border-bottom:none;padding-top:0}
+.up{color:var(--good)} .dn{color:var(--bad)}
+textarea.concl{width:100%;min-height:78px;border:1px solid var(--line2);border-radius:8px;padding:6px 8px;font:inherit;font-size:13px;resize:vertical;background:#fffef8}
+.skuline{font-size:12.5px;color:var(--t2);line-height:1.7}
+.gen{margin-top:10px;padding:10px 12px;border-radius:10px;background:#f6f6f4;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px}
+@media (max-width:1100px){.rv2,.mini{grid-template-columns:1fr}.layout,.charts,.grid2{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
@@ -128,6 +152,7 @@ table.edit td{padding:3px 4px}
 </header>
 <nav class="tabs">
   <button data-tab="profit" class="on">利润测算</button>
+  <button data-tab="review">数据复盘</button>
   <button data-tab="labor">人工成本</button>
   <button data-tab="sum">SKU 汇总</button>
   <button data-tab="set">设置与说明</button>
@@ -144,6 +169,8 @@ table.edit td{padding:3px 4px}
       </div>
     </div>
   </section>
+  <!-- 数据复盘 -->
+  <section class="page" id="p-review"><div id="review"></div></section>
   <!-- 人工 -->
   <section class="page" id="p-labor">
     <div class="grid2">
@@ -155,7 +182,7 @@ table.edit td{padding:3px 4px}
   <section class="page" id="p-sum"><div class="card" id="sum"></div></section>
   <!-- 设置 -->
   <section class="page" id="p-set"><div class="card" id="set"></div></section>
-  <div class="foot">演示数据全部为假设 · 数据只保存在这台电脑的浏览器里，换电脑请用“保存方案 / 打开方案” · V1.1</div>
+  <div class="foot">演示数据全部为假设 · 数据只保存在这台电脑的浏览器里，换电脑请用“保存方案 / 打开方案” · V2</div>
 </main>
 <div id="tip"></div>
 <div class="toast" id="toast"></div>
@@ -399,7 +426,7 @@ const Engine = (() => {
   }
 
   /* ---------- 自动分析 ---------- */
-  const fmtY = v => '¥' + Math.round(v).toLocaleString('zh-CN');
+  const fmtY = v => (v < 0 ? '-¥' : '¥') + Math.abs(Math.round(v)).toLocaleString('zh-CN');
   const fmtP = v => (v * 100).toFixed(1) + '%';
   function analyze(sku, labor, st) {
     const out = [];
@@ -466,7 +493,7 @@ const XLSX = (() => {
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const colL = n => { let s = ''; n++; while (n) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; };
   // 样式编号
-  const S = { txt: 0, title: 1, head: 2, inMoney: 3, money: 4, inInt: 5, int: 6, inPct: 7, pct: 8, inTxt: 9, note: 10, keyMoney: 11, sec: 12, keyInt: 13 };
+  const S = { txt: 0, title: 1, head: 2, inMoney: 3, money: 4, inInt: 5, int: 6, inPct: 7, pct: 8, inTxt: 9, note: 10, keyMoney: 11, sec: 12, keyInt: 13, wan: 14 };
   class Sheet {
     constructor(name) { this.name = name; this.rows = {}; this.widths = []; }
     set(c, r, cell) { (this.rows[r] = this.rows[r] || {})[c] = cell; }
@@ -492,12 +519,12 @@ const XLSX = (() => {
     }
   }
   const STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-<numFmts count="3"><numFmt numFmtId="164" formatCode="&quot;¥&quot;#,##0.00;[Red]-&quot;¥&quot;#,##0.00"/><numFmt numFmtId="165" formatCode="0.0%"/><numFmt numFmtId="166" formatCode="#,##0"/></numFmts>
+<numFmts count="4"><numFmt numFmtId="167" formatCode="#,##0.0;[Red]-#,##0.0"/><numFmt numFmtId="164" formatCode="&quot;¥&quot;#,##0.00;[Red]-&quot;¥&quot;#,##0.00"/><numFmt numFmtId="165" formatCode="0.0%"/><numFmt numFmtId="166" formatCode="#,##0"/></numFmts>
 <fonts count="5"><font><sz val="11"/><name val="Microsoft YaHei"/></font><font><b/><sz val="11"/><name val="Microsoft YaHei"/></font><font><b/><sz val="14"/><name val="Microsoft YaHei"/></font><font><i/><sz val="10"/><color rgb="FF6B6B6B"/><name val="Microsoft YaHei"/></font><font><b/><sz val="11"/><color rgb="FF1C5CAB"/><name val="Microsoft YaHei"/></font></fonts>
 <fills count="5"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFF4CC"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE8EEF6"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF3F3F1"/><bgColor indexed="64"/></patternFill></fill></fills>
 <borders count="2"><border/><border><bottom style="thin"><color rgb="FF9A9A9A"/></bottom></border></borders>
 <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
-<cellXfs count="14">
+<cellXfs count="15">
 <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
 <xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>
 <xf numFmtId="0" fontId="1" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"/>
@@ -512,6 +539,7 @@ const XLSX = (() => {
 <xf numFmtId="164" fontId="4" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1"/>
 <xf numFmtId="0" fontId="1" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"/>
 <xf numFmtId="166" fontId="4" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1"/>
+<xf numFmtId="167" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
 </cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
 
   function book(sheets) {
@@ -688,9 +716,376 @@ const XLSX = (() => {
       '· 演示数据全部为假设，请替换为实际采购单、结算单数据。', '', '导出时间：' + new Date().toLocaleString('zh-CN')].forEach((t, i) => doc.set(0, i + 1, { v: t, s: i === 0 ? S.title : S.txt }));
     return book([doc, sum].concat(sheets.map(x => x.sh), [lab.sh, an]));
   }
-  return { build, zip, setNoCache: b => { NOCACHE = b; } };
+  return { build, zip, book, Sheet, S, setNoCache: b => { NOCACHE = b; } };
 })();
 if (typeof module !== 'undefined') module.exports = XLSX;
+</script>
+<script>/* ===== Excel 读取：在浏览器本地解析 .xlsx（不上传、不联网、无第三方库） ===== */
+const XLSXRead = (() => {
+  const td = new TextDecoder('utf-8');
+  async function inflate(bytes) {
+    const ds = new DecompressionStream('deflate-raw');
+    const buf = await new Response(new Blob([bytes]).stream().pipeThrough(ds)).arrayBuffer();
+    return new Uint8Array(buf);
+  }
+  // 读取 zip 目录
+  function entries(u8) {
+    const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+    let eocd = -1;
+    for (let i = u8.length - 22; i >= Math.max(0, u8.length - 70000); i--) if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+    if (eocd < 0) throw new Error('这不是有效的 .xlsx 文件（如果是 .xls 旧格式，请在 Excel 里另存为 .xlsx）');
+    const n = dv.getUint16(eocd + 10, true); let p = dv.getUint32(eocd + 16, true);
+    const out = {};
+    for (let i = 0; i < n; i++) {
+      const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true), nlen = dv.getUint16(p + 28, true), elen = dv.getUint16(p + 30, true), clen = dv.getUint16(p + 32, true), off = dv.getUint32(p + 42, true);
+      const name = td.decode(u8.subarray(p + 46, p + 46 + nlen));
+      out[name] = { method, csize, off };
+      p += 46 + nlen + elen + clen;
+    }
+    return { get: async name => {
+      const e = out[name]; if (!e) return null;
+      const lnl = dv.getUint16(e.off + 26, true), lel = dv.getUint16(e.off + 28, true), start = e.off + 30 + lnl + lel;
+      const data = u8.subarray(start, start + e.csize);
+      return td.decode(e.method === 0 ? data : await inflate(data));
+    }, names: Object.keys(out) };
+  }
+  const unesc = s => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&#(\d+);/g, (m, d) => String.fromCharCode(+d)).replace(/&amp;/g, '&');
+  const colIdx = s => { let n = 0; for (const ch of s) n = n * 26 + ch.charCodeAt(0) - 64; return n - 1; };
+  function parseShared(xml) {
+    if (!xml) return [];
+    const out = []; const re = /<si>([\s\S]*?)<\/si>/g; let m;
+    while ((m = re.exec(xml))) { let t = ''; const r2 = /<t[^>]*>([\s\S]*?)<\/t>/g; let k; while ((k = r2.exec(m[1]))) t += k[1]; out.push(unesc(t)); }
+    return out;
+  }
+  function parseSheet(xml, shared) {
+    const rows = []; const rre = /<row[^>]*?r="(\d+)"[^>]*?(?:\/>|>([\s\S]*?)<\/row>)/g; let rm;
+    const cre = /<c r="([A-Z]+)\d+"([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g;
+    while ((rm = rre.exec(xml))) {
+      const r = +rm[1] - 1, arr = []; if (!rm[2]) { rows[r] = arr; continue; }
+      let cm; cre.lastIndex = 0;
+      while ((cm = cre.exec(rm[2]))) {
+        const c = colIdx(cm[1]), attrs = cm[2], body = cm[3] || '';
+        const t = (attrs.match(/t="([^"]+)"/) || [])[1];
+        let v = null;
+        if (t === 'inlineStr') { const mm = body.match(/<t[^>]*>([\s\S]*?)<\/t>/); v = mm ? unesc(mm[1]) : ''; }
+        else { const mm = body.match(/<v>([\s\S]*?)<\/v>/); if (mm) { const raw = unesc(mm[1]); v = t === 's' ? shared[+raw] : (t === 'str' || t === 'e' ? raw : t === 'b' ? raw === '1' : +raw); } }
+        arr[c] = v;
+      }
+      rows[r] = arr;
+    }
+    return rows;
+  }
+  // 返回 { sheetNames, read(name) }
+  async function open(arrayBuffer) {
+    const z = entries(new Uint8Array(arrayBuffer));
+    const wb = await z.get('xl/workbook.xml'); if (!wb) throw new Error('文件里找不到工作簿内容');
+    const rels = await z.get('xl/_rels/workbook.xml.rels') || '';
+    const relMap = {}; rels.replace(/<Relationship[^>]*?Id="([^"]+)"[^>]*?Target="([^"]+)"/g, (m, id, tg) => { relMap[id] = tg; });
+    rels.replace(/<Relationship[^>]*?Target="([^"]+)"[^>]*?Id="([^"]+)"/g, (m, tg, id) => { relMap[id] = relMap[id] || tg; });
+    const sheets = []; wb.replace(/<sheet [^>]*?name="([^"]+)"[^>]*?r:id="([^"]+)"/g, (m, n, id) => { sheets.push({ name: unesc(n), path: 'xl/' + relMap[id].replace(/^\/?xl\//, '').replace(/^\//, '') }); });
+    const shared = parseShared(await z.get('xl/sharedStrings.xml'));
+    return { sheetNames: sheets.map(s => s.name), read: async name => { const s = sheets.find(x => x.name === name); if (!s) return null; return parseSheet(await z.get(s.path), shared); } };
+  }
+  return { open };
+})();
+if (typeof module !== 'undefined') module.exports = XLSXRead;
+</script>
+<script>/* ===== 损益复盘引擎：读系统导出的“本期 / 同期”明细，生成当月 / 累计对比分析 ===== */
+const Review = (() => {
+  // 字段清单：必需字段缺一个就拒绝导入；可选字段缺了，对应分析隐藏，绝不当 0 计算
+  const NEED = ['日历年/月', '收入', '=产品考核净利润'];
+  const OPTIONAL = [['-产品成本', '产品成本'], ['=产品毛利额', '毛利额（毛利率）'], ['-AP', 'AP 费用'], ['-TP', 'TP 费用'], ['-CP', 'CP 费用'], ['-PP', 'PP 费用'], ['-MP', 'MP 费用'], ['-FP', 'FP 费用'],
+    ['一级品类', '一级品类（产品维度）'], ['四级规格', '四级规格（规格明细）'], ['-产品组/研发费用合计', '产品组/研发费用'], ['-AE', '公摊费用 AE'], ['所得税', '所得税']];
+  const FEES = ['-AP', '-TP', '-CP', '-PP', '-MP', '-FP'];
+  const DIMS = ['四级渠道', '三级渠道', '二级渠道', '一级渠道', '考核组织名称', '战区', '大区'];
+  // 数据类型模板：每种报表一条，写明需要哪几张表、表头特征。以后新增类型在这里加一条即可。
+  const SOURCES = [
+    { id: 'pl-yoy', name: '系统损益明细（本期 / 同期）', sheets: ['本期', '同期'], headerHas: ['日历年/月', '收入', '=产品考核净利润'],
+      desc: '从系统导出的损益明细，每行是“月份 × 客户 × 规格”，含收入、成本和各项费用；用于当月 / 累计同比复盘。' }
+  ];
+  function detect(sheetNames) {
+    for (const src of SOURCES) { const got = src.sheets.map(n => sheetNames.find(x => x.trim() === n)); if (got.every(Boolean)) return { src, sheets: got }; }
+    return null;
+  }
+
+  /* ---------- 数据集 ---------- */
+  function dataset(rows, label) {
+    const hi = rows.findIndex(r => r && r.includes('日历年/月') && r.includes('收入'));
+    if (hi < 0) throw new Error(`“${label}”表里找不到表头（需要有“日历年/月”和“收入”两列）`);
+    const hdr = rows[hi].map(x => x == null ? '' : String(x).trim()), col = {};
+    hdr.forEach((h, i) => { if (h && !(h in col)) col[h] = i; });
+    const miss = NEED.filter(n => !(n in col));
+    if (miss.length) throw new Error(`“${label}”表缺少必需的列：${miss.join('、')}。请确认导出的是系统损益明细。`);
+    if (!DIMS.some(d => d in col)) throw new Error(`“${label}”表里没有可以区分客户的列（${DIMS.join(' / ')}）`);
+    const iMonth = col['日历年/月'];
+    const data = rows.slice(hi + 1).filter(r => r && r[iMonth] != null && String(r[iMonth]).trim() !== '').map(r => { r[iMonth] = normMonth(r[iMonth]); return r; });
+    // 每项费用的子项：从该费用列到下一个“-”或“=”开头的列之间
+    const groups = {};
+    FEES.forEach(f => {
+      if (!(f in col)) { groups[f] = []; return; }
+      const s = col[f]; let e = s + 1; while (e < hdr.length && !/^[-=]/.test(hdr[e]) && !DIMS.includes(hdr[e])) e++;
+      const sub = [];
+      for (let i = s + 1; i < e; i++) { if (/^\d+-/.test(hdr[i])) sub.push({ i, name: hdr[i], level: 1 }); else if (/^\d+\.\d+-/.test(hdr[i])) sub.push({ i, name: hdr[i], level: 2 }); }
+      groups[f] = sub;
+    });
+    const numCols = []; for (let i = col['收入']; i <= col['=产品考核净利润']; i++) numCols.push(i);
+    const months = [...new Set(data.map(r => r[iMonth]))].sort();
+    const dims = DIMS.filter(d => d in col);
+    const has = n => n in col;
+    // 导入检查
+    const known = new Set([...NEED, ...OPTIONAL.map(o => o[0]), ...DIMS, ...Object.values(groups).flat().map(x => x.name)]);
+    const check = { rows: data.length, found: OPTIONAL.filter(o => has(o[0])).map(o => o[1]), missing: OPTIONAL.filter(o => !has(o[0])).map(o => o[1]),
+      ignored: hdr.filter(h => h && !known.has(h) && !/^\d+(\.\d+)?-/.test(h)).length, balance: null };
+    const parts = ['-产品成本', '-AP', '-TP', '-CP', '-PP', '-MP', '-FP', '-产品组/研发费用合计', '-AE', '所得税'];
+    if (parts.every(has)) {
+      let rev = 0, gap = 0;
+      for (const r of data) { const v = n => +r[col[n]] || 0; rev += Math.abs(v('收入')); gap += Math.abs(v('收入') - parts.reduce((a, n) => a + v(n), 0) - v('=产品考核净利润')); }
+      check.balance = { ok: gap <= Math.max(0.01, rev * 0.001), gap };
+    }
+    return { label, hdr, col, data, groups, numCols, months, dims, has, check };
+  }
+  function normMonth(v) {
+    if (typeof v === 'number') { // Excel 日期序号
+      if (v > 20000) { const d = new Date(Math.round((v - 25569) * 864e5)); return d.getUTCFullYear() + '/' + String(d.getUTCMonth() + 1).padStart(2, '0'); }
+      return String(v);
+    }
+    const m = String(v).trim().match(/^(\d{4})\D?(\d{1,2})/); return m ? m[1] + '/' + m[2].padStart(2, '0') : String(v).trim();
+  }
+  const prevYear = m => { const [y, mm] = m.split('/'); return (+y - 1) + '/' + mm; };
+  function values(ds, dim) { return dim in ds.col ? [...new Set(ds.data.map(r => r[ds.col[dim]]).filter(v => v != null && v !== ''))].sort((a, b) => String(a).localeCompare(String(b), 'zh')) : []; }
+
+  /* ---------- 汇总 ---------- */
+  function sums(ds, f) {
+    const s = new Float64Array(ds.hdr.length), cats = new Map(), skus = new Map();
+    const iM = ds.col['日历年/月'], iD = f.dim && f.dim in ds.col ? ds.col[f.dim] : -1, iC = ds.col['一级品类'] ?? -1, iS = ds.col['四级规格'] ?? -1, iG = ds.col['收入'], iP = ds.col['=产品考核净利润'];
+    for (const r of ds.data) {
+      if (!f.months.has(r[iM])) continue;
+      if (iD >= 0 && f.cust !== '全部' && r[iD] !== f.cust) continue;
+      if (f.sku && (iS < 0 || r[iS] !== f.sku)) continue;
+      for (const i of ds.numCols) { const v = +r[i]; if (v) s[i] += v; }
+      const add = (m, k) => { const o = m.get(k) || { rev: 0, profit: 0 }; o.rev += +r[iG] || 0; o.profit += +r[iP] || 0; m.set(k, o); };
+      if (iC >= 0) add(cats, r[iC] || '未分类'); if (iS >= 0) add(skus, r[iS] || '未知规格');
+    }
+    return { s, cats, skus };
+  }
+
+  /* ---------- 一段（当月 / 累计）的分析 ---------- */
+  function section(dc, dp, f, opts) {
+    const A = sums(dc, { dim: f.dim, cust: f.cust, months: new Set(f.cur) }), B = sums(dp, { dim: f.dim, cust: f.cust, months: new Set(f.pri) });
+    const g = (X, ds, n) => n in ds.col ? (X.s[ds.col[n]] || 0) : 0;
+    const rev = { a: g(A, dc, '收入'), b: g(B, dp, '收入') }, profit = { a: g(A, dc, '=产品考核净利润'), b: g(B, dp, '=产品考核净利润') };
+    rev.d = rev.a - rev.b; profit.d = profit.a - profit.b;
+    const rate = (X, ds, n) => { const G = g(X, ds, '收入'); return G && n in ds.col ? g(X, ds, n) / G : null; };
+    const feeRow = (label, n) => { const a = rate(A, dc, n), b = rate(B, dp, n); return { label, key: n, a, b, d: a !== null && b !== null ? a - b : null }; };
+    const fees = [['毛利率', '=产品毛利额']].concat(FEES.map(n => [n.slice(1), n])).filter(([, n]) => n in dc.col && n in dp.col).map(([l, n]) => feeRow(l, n));
+    const tp5n = dc.groups['-TP'].find(x => /供价差异/.test(x.name) && x.level === 1);
+    const tp5 = tp5n ? feeRow('TP5', tp5n.name) : null;
+    const subRate = (X, ds, name) => { const i = ds.hdr.indexOf(name); const G = g(X, ds, '收入'); return i >= 0 && G ? (X.s[i] || 0) / G : 0; };
+    const subAmt = (X, ds, name) => { const i = ds.hdr.indexOf(name); return i >= 0 ? (X.s[i] || 0) : 0; };
+    const cpBreak = dc.groups['-CP'].filter(x => x.level === 1).map(x => ({ name: clean(x.name), a: subRate(A, dc, x.name), b: subRate(B, dp, x.name) })).map(x => Object.assign(x, { d: x.a - x.b }));
+    const drill = {};
+    FEES.forEach(n => {
+      drill[n] = dc.groups[n].filter(x => x.level === 2).map(x => ({ name: clean(x.name), a: subRate(A, dc, x.name), b: subRate(B, dp, x.name), amtA: subAmt(A, dc, x.name), amtB: subAmt(B, dp, x.name) }))
+        .map(x => Object.assign(x, { d: x.a - x.b })).filter(x => Math.abs(x.d) > 1e-6).sort((p, q) => Math.abs(q.d) - Math.abs(p.d)).slice(0, 5);
+    });
+    const diffMap = (ma, mb) => { const out = []; new Set([...ma.keys(), ...mb.keys()]).forEach(k => { const a = ma.get(k) || { rev: 0, profit: 0 }, b = mb.get(k) || { rev: 0, profit: 0 }; out.push({ name: k, revA: a.rev, revB: b.rev, rev: a.rev - b.rev, profitA: a.profit, profitB: b.profit, profit: a.profit - b.profit }); }); return out; };
+    const cats = diffMap(A.cats, B.cats), skus = diffMap(A.skus, B.skus);
+    const sec = { rev, profit, fees, tp5, cpBreak, drill, cats, skus, months: f.cur, monthsPri: f.pri, empty: !rev.a && !rev.b,
+      hasProduct: '一级品类' in dc.col && '一级品类' in dp.col, hasSku: '四级规格' in dc.col && '四级规格' in dp.col, missingPri: f.pri.filter(m => !dp.months.includes(m)) };
+    sec.thr = Math.max(opts.minWan, Math.abs(rev.b) * 0.01, Math.abs(rev.a) * 0.01);
+    sec.conclusions = conclude(sec, opts);
+    return sec;
+  }
+  const clean = n => n.replace(/^\d+(\.\d+)?-/, '').trim();
+
+  function analyze(dc, dp, f, opts) {
+    opts = Object.assign({ minWan: 1, drillPP: 0.01, topSku: 5 }, opts || {});
+    const cumMonths = dc.months.filter(m => m >= f.cumStart && m <= f.month);
+    return {
+      cust: f.cust, month: f.month, dim: f.dim,
+      当月: section(dc, dp, { dim: f.dim, cust: f.cust, cur: [f.month], pri: [prevYear(f.month)] }, opts),
+      累计: section(dc, dp, { dim: f.dim, cust: f.cust, cur: cumMonths, pri: cumMonths.map(prevYear) }, opts),
+      opts
+    };
+  }
+
+  /* ---------- 格式 ---------- */
+  const wan = v => { const r = Math.round(v); return (r === 0 && v !== 0 ? (+v.toFixed(1)) : r).toLocaleString('zh-CN') + '万'; };
+  const swan = v => (v > 0 ? '+' : '') + wan(v);
+  const pc = v => v === null || v === undefined ? '—' : (v * 100).toFixed(1) + '%';
+  const spc = v => v === null || v === undefined ? '—' : (v > 0 ? '+' : '') + (v * 100).toFixed(1) + '%';
+  const growth = (a, b) => b > 0 ? spc(a / b - 1).replace('%', '%') : null;
+  function profitPhrase(p) {
+    if (p.b > 0 && p.a >= 0) return '增长率' + growth(p.a, p.b);
+    if (p.b < 0 && p.a < 0) return p.d >= 0 ? '减亏' + wan(p.d) : '亏损扩大' + wan(-p.d);
+    if (p.b <= 0 && p.a > 0) return '扭亏为盈，' + swan(p.d);
+    return '由盈转亏，' + swan(p.d);
+  }
+  // 门槛：变化至少 1 万，且不小于同期收入的 1%（避免零碎变化刷屏）
+  const lst = (arr, key, sign, thr = 1) => arr.filter(x => sign > 0 ? x[key] >= thr - 0.5 && Math.round(x[key]) >= 1 : x[key] <= -(thr - 0.5) && Math.round(x[key]) <= -1).sort((p, q) => sign > 0 ? q[key] - p[key] : p[key] - q[key]);
+  function headline(sec) {
+    return `收入：本期${wan(sec.rev.a)}，同期${wan(sec.rev.b)}，${sec.rev.b > 0 ? '增长率' + growth(sec.rev.a, sec.rev.b) : '差额' + swan(sec.rev.d)}\n利润：本期${wan(sec.profit.a)}，同期${wan(sec.profit.b)}，${profitPhrase(sec.profit)}`;
+  }
+  function productText(sec, opts) {
+    if (!sec.hasProduct) return `收入（${swan(sec.rev.d)}），利润（${swan(sec.profit.d)}）\n（数据里没有“一级品类”列，品类分析不显示）`;
+    const n = (opts && opts.topSku) || 5;
+    const f = (xs, key) => xs.map(x => x.name + swan(x[key])).join('、') || '无';
+    const up = lst(sec.cats, 'rev', 1, sec.thr), dn = lst(sec.cats, 'rev', -1, sec.thr), skUp = lst(sec.skus, 'rev', 1, sec.thr).slice(0, 3), skDn = lst(sec.skus, 'rev', -1, sec.thr).slice(0, n);
+    const pup = lst(sec.cats, 'profit', 1, sec.thr), pdn = lst(sec.cats, 'profit', -1, sec.thr), pskDn = lst(sec.skus, 'profit', -1, sec.thr).slice(0, 3);
+    return `收入（${swan(sec.rev.d)}）：\n增长品类：${f(up, 'rev')}` + (skUp.length ? `\n（${f(skUp, 'rev')}）` : '') +
+      `\n下滑品类：${f(dn, 'rev')}` + (skDn.length ? `\n（${f(skDn, 'rev')}）` : '') +
+      `\n\n利润（${swan(sec.profit.d)}）：\n增长品类：${f(pup, 'profit')}\n下滑品类：${f(pdn, 'profit')}` + (pskDn.length ? `\n（${f(pskDn, 'profit')}）` : '');
+  }
+  function feeText(sec) {
+    if (!sec.fees.length) return '（数据里没有费用列，费用分析不显示）';
+    let t = sec.fees.map(x => `${x.label}：本期${pc(x.a)}，同期${pc(x.b)}，差异${spc(x.d)}`).join('\n');
+    t += '\n\n重点分析：';
+    if (sec.tp5) t += `\nTP5：本期${pc(sec.tp5.a)}，同期${pc(sec.tp5.b)}，差异${spc(sec.tp5.d)}`;
+    const cp = sec.fees.find(x => x.key === '-CP'), parts = sec.cpBreak.filter(x => Math.abs(x.d) >= 0.0005).sort((p, q) => Math.abs(q.d) - Math.abs(p.d)).slice(0, 3);
+    if (cp) t += `\nCP${spc(cp.d)}` + (parts.length ? '，其中' + parts.map(x => x.name + spc(x.d)).join('、') : '');
+    sec.fees.filter(x => x.key !== '=产品毛利额' && x.key !== '-CP' && x.d !== null && Math.abs(x.d) >= 0.01).forEach(x => {
+      const top = (sec.drill[x.key] || []).filter(s => Math.sign(s.d) === Math.sign(x.d)).slice(0, 2);
+      if (top.length) t += `\n${x.label}${spc(x.d)}，主要来自` + top.map(s => s.name + spc(s.d)).join('、');
+    });
+    return t;
+  }
+
+  /* ---------- 结论规则 ---------- */
+  function conclude(sec, opts) {
+    if (sec.empty) return ['本期和同期都没有数据。'];
+    const out = [], rd = sec.rev.d, pd = sec.profit.d, r = sec.rev;
+    const g = r.b > 0 ? r.a / r.b - 1 : null;
+    if (rd < 0 && pd > 0) out.push(`收入减少${wan(-rd)}，利润反而改善${wan(pd)}，属于“量缩、利改善”的结构，减亏不是靠销量提升带来的`);
+    else if (rd > 0 && pd < 0) out.push(`收入增加${wan(rd)}，利润却减少${wan(-pd)}，增收不增利`);
+    else if (rd < 0 && pd < 0) out.push(`收入减少${wan(-rd)}，利润减少${wan(-pd)}，量利双降`);
+    else if (rd > 0 && pd > 0) out.push(`收入增加${wan(rd)}，利润增加${wan(pd)}，量利双增`);
+    const up = lst(sec.cats, 'rev', 1, sec.thr), skUp = lst(sec.skus, 'rev', 1, sec.thr);
+    if (!up.length) out.push('没有收入增长的品类' + (skUp.length ? `，仅${skUp[0].name}增长${wan(skUp[0].rev)}` : ''));
+    else if (skUp.length) out.push(`收入增量主要来自${skUp[0].name}（${swan(skUp[0].rev)}）`);
+    const cannibal = sec.skus.filter(x => x.rev >= sec.thr && x.profit <= -Math.max(3, sec.thr)).sort((p, q) => p.profit - q.profit)[0];
+    if (cannibal) out.push(`${cannibal.name}收入${swan(cannibal.rev)}但利润${swan(cannibal.profit)}，增收不增利，吃掉了其他品类的利润改善`);
+    const pdn = lst(sec.cats, 'profit', -1, sec.thr);
+    if (pdn.length && pd < 0) out.push(`利润主要被${pdn.slice(0, 2).map(x => x.name + swan(x.profit)).join('、')}拖累`);
+    const gm = sec.fees.find(x => x.key === '=产品毛利额'), feeD = sec.fees.filter(x => x.key !== '=产品毛利额').reduce((s, x) => s + (x.d || 0), 0);
+    if (gm && gm.d !== null && gm.d <= -0.01) {
+      if (feeD < -0.005) out.push(Math.abs(gm.d) > Math.abs(feeD) ? `毛利率下滑${(Math.abs(gm.d) * 100).toFixed(1)}个百分点，超过费用率压降的${(Math.abs(feeD) * 100).toFixed(1)}个百分点，费用节约补不上毛利缺口` : `毛利率下滑${(Math.abs(gm.d) * 100).toFixed(1)}个百分点，但费用率压降${(Math.abs(feeD) * 100).toFixed(1)}个百分点，抵消了毛利缺口`);
+      else if (feeD > 0.005) out.push(`毛利率下滑${(Math.abs(gm.d) * 100).toFixed(1)}个百分点，费用率又上升${(feeD * 100).toFixed(1)}个百分点，利润受双重挤压`);
+      else out.push(`毛利率下滑${(Math.abs(gm.d) * 100).toFixed(1)}个百分点`);
+    }
+    const big = sec.fees.filter(x => x.key !== '=产品毛利额').filter(x => x.d !== null).sort((p, q) => Math.abs(q.d) - Math.abs(p.d))[0];
+    if (big && Math.abs(big.d) >= 0.02) {
+      const top = (sec.drill[big.key] || []).filter(s => Math.sign(s.d) === Math.sign(big.d))[0];
+      out.push(`${big.label}费率${big.d > 0 ? '上升' : '下降'}${(Math.abs(big.d) * 100).toFixed(1)}个百分点` + (top ? `，主要来自${top.name}（${spc(top.d)}）` : ''));
+    }
+    const fixedUp = sec.fees.filter(x => ['-PP', '-MP'].includes(x.key) && x.d > 0.005);
+    if (g !== null && g < -0.3 && fixedUp.length) out.push(`收入萎缩推高了${fixedUp.map(x => x.label).join('、')}等相对固定费用的费率`);
+    return out;
+  }
+
+  /* ---------- 思维导图结构（导出 XMind / 复制文字共用） ---------- */
+  function splitConclusions(s) {
+    return { product: s.conclusions.filter(c => !/费率|毛利/.test(c)).join('；'), fee: s.conclusions.filter(c => /费率|毛利/.test(c)).join('；') || '费用结构变化不大' };
+  }
+  function tree(results, title, edits) {
+    return { title, children: results.map(res => ({ title: res.cust, children: ['当月', '累计'].map(k => {
+      const s = res[k], e = Object.assign(splitConclusions(s), ((edits || {})[res.cust] || {})[k] || {});
+      return { title: k + '\n' + headline(s), bold: k, children: [
+        { title: '产品维度\n' + productText(s, res.opts), children: [{ title: '结论：' + (e.product || '—') }] },
+        { title: '费用维度\n' + feeText(s), children: [{ title: '结论：' + (e.fee || '—') }] }
+      ] };
+    }) })) };
+  }
+  function treeText(node, d = 0) { return '  '.repeat(d) + '- ' + node.title.replace(/\n/g, '\n' + '  '.repeat(d) + '  ') + '\n' + (node.children || []).map(c => treeText(c, d + 1)).join(''); }
+
+  /* ---------- 由实际数据生成测算方案 ---------- */
+  function toScheme(dc, f, price) {
+    const X = sums(dc, { dim: f.dim, cust: f.cust, months: new Set(f.months), sku: f.sku });
+    const g = n => X.s[dc.col[n]] || 0, G = g('收入');
+    if (!(G > 0)) throw new Error('所选范围的收入为 0，无法生成方案');
+    const need = ['-产品成本', '-AP', '-TP', '-CP', '-PP', '-MP', '-FP'].filter(n => !(n in dc.col));
+    if (need.length) throw new Error('数据缺少这些费用列，无法生成完整方案：' + need.join('、'));
+    const r = n => g(n) / G, other = (G - g('-产品成本') - g('-AP') - g('-TP') - g('-CP') - g('-PP') - g('-MP') - g('-FP') - g('=产品考核净利润')) / G;
+    const vol = Math.round(G * 10000 / price);
+    const p2 = v => Math.round(v * 10000) / 10000;
+    const items = [['AP 广告费用', r('-AP')], ['CP 促销费用', r('-CP')], ['MP 管理费用', r('-MP')], ['FP 财务费用', r('-FP')], ['其他（研发/公摊/所得税）', other]]
+      .map(([name, v], i) => ({ id: 'act' + i, name, nature: 'cost', method: 'pct', pctBase: 'eff', src: 'num', vals: { base: p2(v * 100), promo: p2(v * 100) } }));
+    const base = { list: price, discount: 0, volume: vol, purchase: p2(price * r('-产品成本')), purchaseUnit: 'bag', bagsPerBox: 12, laborMode: 'none', labor: 0, cold: p2(price * r('-PP')), loss: 0, rate: p2(r('-TP') * 100), rateBase: 'eff', fee: 0 };
+    return { expectProfit: g('=产品考核净利润') * 10000, revenue: G * 10000, base, items };
+  }
+
+  return { SOURCES, detect, splitConclusions, OPTIONAL, NEED, dataset, values, analyze, tree, treeText, headline, productText, feeText, toScheme, prevYear, wan, swan, pc, spc, DIMS };
+})();
+if (typeof module !== 'undefined') module.exports = Review;
+</script>
+<script>/* ===== 复盘结果导出：Excel（数据表）与 XMind（括号图，结构同手工思维导图） ===== */
+const ReviewExport = (() => {
+  const uuid = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); });
+
+  function xmind(tree) {
+    const topic = (n, root) => {
+      const t = { id: uuid(), class: 'topic', title: n.title };
+      if (root) t.structureClass = 'org.xmind.ui.brace.right';
+      const nl = n.title.indexOf('\n');
+      if (nl > 0) t.attributedTitle = [{ text: n.title.slice(0, nl), 'fo:font-weight': '700' }, { text: n.title.slice(nl) }];
+      if (n.children && n.children.length) t.children = { attached: n.children.map(c => topic(c)) };
+      return t;
+    };
+    const content = [{ id: uuid(), revisionId: uuid(), class: 'sheet', title: '损益复盘', rootTopic: topic(tree, true) }];
+    return XLSX.zip([
+      { name: 'content.json', data: JSON.stringify(content) },
+      { name: 'metadata.json', data: JSON.stringify({ dataStructureVersion: '3', creator: { name: '三全利润与人工测算器', version: '2' }, layoutEngineVersion: '5' }) },
+      { name: 'manifest.json', data: JSON.stringify({ 'file-entries': { 'content.json': {}, 'metadata.json': {} } }) }
+    ]);
+  }
+
+  function excel(results, edits, meta) {
+    const { Sheet, S, book } = XLSX, V = Review, sheets = [];
+    const doc = new Sheet('说明'); doc.widths = [100];
+    ['损益复盘（由导入数据自动生成）', '', '分析月份：' + meta.month + '　累计范围：' + meta.cumRange + '　客户列：' + meta.dim, '金额单位：万元；费率 = 费用 ÷ 收入；差异 = 本期费率 − 同期费率。',
+      '这里是计算结果（数值），不是公式。原始数据请回到系统导出的明细核对。', '导出时间：' + new Date().toLocaleString('zh-CN')].forEach((t, i) => doc.set(0, i + 1, { v: t, s: i ? S.txt : S.title }));
+    sheets.push(doc);
+    const used = new Set(['说明']);
+    results.forEach(res => {
+      let nm = String(res.cust).replace(/[\[\]:*?\/\\']/g, '').slice(0, 28) || '客户'; let x = nm, k = 2; while (used.has(x)) x = nm + k++; used.add(x);
+      const sh = new Sheet(x); sh.widths = [26, 14, 14, 14, 14, 3, 26, 14, 14, 14, 14]; let r = 1;
+      sh.set(0, r++, { v: res.cust + ' 损益复盘（' + meta.month + '）', s: S.title }); r++;
+      ['当月', '累计'].forEach(key => {
+        const s = res[key];
+        sh.set(0, r, { v: key + '（' + s.months[0] + (s.months.length > 1 ? ' ~ ' + s.months[s.months.length - 1] : '') + '）', s: S.sec }); for (let c = 1; c < 5; c++) sh.set(c, r, { v: '', s: S.sec }); r++;
+        ['项目', '本期', '同期', '差额', '增长率'].forEach((h, c) => sh.set(c, r, { v: h, s: S.head })); r++;
+        [['收入（万元）', s.rev], ['利润（万元）', s.profit]].forEach(([l, o]) => { sh.set(0, r, { v: l }); sh.set(1, r, { v: o.a, s: S.wan }); sh.set(2, r, { v: o.b, s: S.wan }); sh.set(3, r, { v: o.d, s: S.wan }); sh.set(4, r, o.b > 0 ? { v: o.a / o.b - 1, s: S.pct } : { v: '—' }); r++; });
+        r++;
+        if (s.fees.length) {
+          ['费用率', '本期', '同期', '差异'].forEach((h, c) => sh.set(c, r, { v: h, s: S.head })); r++;
+          s.fees.concat(s.tp5 ? [s.tp5] : []).forEach(f => { sh.set(0, r, { v: f.label }); sh.set(1, r, { v: f.a, s: S.pct }); sh.set(2, r, { v: f.b, s: S.pct }); sh.set(3, r, { v: f.d, s: S.pct }); r++; });
+          s.cpBreak.forEach(f => { sh.set(0, r, { v: '  CP·' + f.name }); sh.set(1, r, { v: f.a, s: S.pct }); sh.set(2, r, { v: f.b, s: S.pct }); sh.set(3, r, { v: f.d, s: S.pct }); r++; });
+          r++;
+          ['费用子项（变化最大）', '本期费率', '同期费率', '差异', '本期金额'].forEach((h, c) => sh.set(c, r, { v: h, s: S.head })); r++;
+          Object.entries(s.drill).forEach(([fk, list]) => list.slice(0, 3).forEach(d => { sh.set(0, r, { v: fk.slice(1) + '·' + d.name }); sh.set(1, r, { v: d.a, s: S.pct }); sh.set(2, r, { v: d.b, s: S.pct }); sh.set(3, r, { v: d.d, s: S.pct }); sh.set(4, r, { v: d.amtA, s: S.wan }); r++; }));
+          r++;
+        }
+        if (s.hasProduct) {
+          ['品类', '本期收入', '同期收入', '收入差额', '利润差额'].forEach((h, c) => sh.set(c, r, { v: h, s: S.head })); r++;
+          s.cats.slice().sort((p, q) => p.rev - q.rev).forEach(c => { sh.set(0, r, { v: c.name }); sh.set(1, r, { v: c.revA, s: S.wan }); sh.set(2, r, { v: c.revB, s: S.wan }); sh.set(3, r, { v: c.rev, s: S.wan }); sh.set(4, r, { v: c.profit, s: S.wan }); r++; });
+          r++;
+        }
+        if (s.hasSku) {
+          ['规格（收入变化前 10）', '本期收入', '同期收入', '收入差额', '利润差额'].forEach((h, c) => sh.set(c, r, { v: h, s: S.head })); r++;
+          s.skus.slice().sort((p, q) => Math.abs(q.rev) - Math.abs(p.rev)).slice(0, 10).forEach(c => { sh.set(0, r, { v: c.name }); sh.set(1, r, { v: c.revA, s: S.wan }); sh.set(2, r, { v: c.revB, s: S.wan }); sh.set(3, r, { v: c.rev, s: S.wan }); sh.set(4, r, { v: c.profit, s: S.wan }); r++; });
+          r++;
+        }
+        sh.set(0, r, { v: '结论', s: S.head }); r++;
+        const e = Object.assign(Review.splitConclusions(s), (edits[res.cust] || {})[key] || {});
+        [['产品', e.product], ['费用', e.fee]].forEach(([l, t]) => { sh.set(0, r, { v: l + '：' + (t || ''), s: S.note }); r++; });
+        r += 2;
+      });
+      sheets.push(sh);
+    });
+    return book(sheets);
+  }
+  return { xmind, excel };
+})();
+if (typeof module !== 'undefined') module.exports = ReviewExport;
 </script>
 <script>
 /* ======================= 状态 ======================= */
@@ -878,7 +1273,7 @@ function waterfall(r, color){
   return g + '</svg>';
 }
 function compareBars(rows){ // rows: [{n, v, c}]
-  const W = 380, H = 40 + rows.length * 46, L = 70, R = 70;
+  const W = 380, H = 40 + rows.length * 46, L = 70, R = 80;
   const lo = Math.min(0, ...rows.map(r => r.v)), hi = Math.max(0, ...rows.map(r => r.v));
   const x = v => L + (v - lo) / (hi - lo || 1) * (W - L - R);
   let g = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="利润对比">`;
@@ -886,7 +1281,7 @@ function compareBars(rows){ // rows: [{n, v, c}]
     const yy = 14 + i * 46, x0 = x(Math.min(0, r.v)), w = Math.max(2, Math.abs(x(r.v) - x(0)));
     g += `<text x="${L - 8}" y="${yy + 19}" text-anchor="end" font-size="12.5" fill="#52514e">${r.n}</text>`;
     g += `<rect x="${x0}" y="${yy + 4}" width="${w}" height="24" rx="4" fill="${r.v < 0 ? 'var(--neg)' : r.c}" data-tip="<b>${r.n}</b> ${yuan(r.v)}"/>`;
-    g += `<text x="${r.v >= 0 ? x(r.v) + 6 : x0 - 6}" y="${yy + 21}" text-anchor="${r.v >= 0 ? 'start' : 'end'}" font-size="12.5" font-weight="700" fill="#1b1b1a">${yuan(r.v)}</text>`;
+    g += `<text x="${r.v >= 0 ? x(r.v) + 6 : x(0) + 6}" y="${yy + 21}" text-anchor="start" font-size="12.5" font-weight="700" fill="#1b1b1a">${yuan(r.v)}</text>`;
   });
   g += `<line x1="${x(0)}" x2="${x(0)}" y1="8" y2="${H - 22}" stroke="#9a9a94"/>`;
   return g + '</svg>';
@@ -967,7 +1362,7 @@ function renderResults(){
   const an = Engine.analyze(k, L, S.settings), head = an[0], eq = p.minVolume(b.profit);
   const view = S.view === 'base' ? b : p, vc = S.view === 'base' ? 'var(--base)' : 'var(--promo)';
   const kpi = (title, fb, fp, extra) => `<div class="kpi"><div class="k">${title}</div><div class="v"><span class="dot" style="background:var(--promo);width:10px;height:10px" title="促销方案"></span>${fp}</div><div class="v2"><span class="dot" style="background:var(--base)"></span>基准 <b>${fb}</b>${extra || ''}</div></div>`;
-  let h = `<h2>${esc(k.name)} · 测算结果 <span class="sub"><span class="dot" style="background:var(--promo)"></span>大字为促销方案 · ${esc(S.meta.channel || '')} ${esc(S.meta.month || '')}</span></h2>
+  let h = (k.source ? `<div class="hint" style="margin:-4px 0 8px">基准方案来自导入数据：${esc(k.source.cust)} · ${esc(k.source.sku)} · ${esc(k.source.label)}，单袋到手价按 ¥${k.source.price} 折算；“冷链”一栏填的是 PP（物流仓储）每袋金额，AP/CP/MP/FP 等按实际费率放在“进阶”里。</div>` : '') + `<h2>${esc(k.name)} · 测算结果 <span class="sub"><span class="dot" style="background:var(--promo)"></span>大字为促销方案 · ${esc(S.meta.channel || '')} ${esc(S.meta.month || '')}</span></h2>
   <div class="kpis">
     ${kpi('销售收入', yuan(b.rev), yuan(p.rev))}
     ${kpi('预计场景利润', yuan(b.profit), yuan(p.profit), `<br>差额 <b style="color:${p.profit - b.profit < 0 ? 'var(--bad)' : 'var(--good)'}">${p.profit - b.profit >= 0 ? '+' : ''}${yuan(p.profit - b.profit)}</b>`)}
@@ -1141,10 +1536,155 @@ function renderSet(){
   document.querySelectorAll('[data-st]').forEach(inp => inp.oninput = () => { st[inp.dataset.st] = inp.value.trim(); save(); });
 }
 
+/* ======================= 数据复盘页 ======================= */
+const REV = { cur: null, pri: null, file: '', dim: '', custs: [], month: '', cumStart: '', edits: {}, gen: {}, busy: false };
+async function loadReviewFile(file){
+  REV.busy = true; renderReview();
+  try{
+    const wb = await XLSXRead.open(await file.arrayBuffer());
+    const hit = Review.detect(wb.sheetNames);
+    if (!hit) throw new Error('认不出这是哪种数据。目前支持：' + Review.SOURCES.map(x => x.name + '（需要表：' + x.sheets.join('、') + '）').join('；') + '。\n这个文件里的表：' + wb.sheetNames.join('、'));
+    const [cn, pn] = hit.sheets;
+    const cur = Review.dataset(await wb.read(cn), '本期'), pri = Review.dataset(await wb.read(pn), '同期');
+    Object.assign(REV, { cur, pri, file: file.name, source: hit.src, edits: {}, gen: {} });
+    REV.dim = cur.dims.includes('四级渠道') ? '四级渠道' : cur.dims[0];
+    REV.month = cur.months[cur.months.length - 1];
+    REV.cumStart = cur.months.find(m => m.slice(0, 4) === REV.month.slice(0, 4)) || cur.months[0];
+    REV.custs = topCusts(3);
+    toast('已读取：' + file.name);
+  }catch(err){ alert('导入失败：' + err.message); }
+  REV.busy = false; renderReview();
+}
+function topCusts(n){
+  const d = REV.cur, iD = d.col[REV.dim], iG = d.col['收入'], iM = d.col['日历年/月'], m = new Map();
+  d.data.forEach(r => { if (r[iM] === REV.month) m.set(r[iD], (m.get(r[iD]) || 0) + (+r[iG] || 0)); });
+  return [...m.entries()].filter(x => x[1] > 0 && x[0] != null).sort((a, b) => b[1] - a[1]).slice(0, n).map(x => x[0]);
+}
+function divBars(list, key, title){
+  const xs = list.filter(x => Math.abs(x[key]) >= 0.05).sort((a, b) => b[key] - a[key]);
+  if (!xs.length) return `<div class="hint">${title}：无变化</div>`;
+  const W = 330, rowH = 20, L = 70, R = 10, H = 22 + xs.length * rowH, m = Math.max(...xs.map(x => Math.abs(x[key]))), mid = L + (W - L - R) / 2, sc = v => v / m * (W - L - R) / 2 * 0.68;
+  let g = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${title}"><text x="0" y="12" font-size="11.5" font-weight="700" fill="#1b1b1a">${title}（万元）</text>`;
+  xs.forEach((x, i) => { const v = x[key], y = 20 + i * rowH, w = Math.abs(sc(v));
+    g += `<text x="${L - 6}" y="${y + 12}" text-anchor="end" font-size="11" fill="#52514e">${esc(String(x.name).slice(0, 6))}</text>`;
+    g += `<rect x="${v >= 0 ? mid : mid - w}" y="${y + 3}" width="${Math.max(1, w)}" height="12" rx="3" fill="${v >= 0 ? 'var(--base)' : 'var(--promo)'}" data-tip="<b>${esc(x.name)}</b><br>${key === 'rev' ? '收入' : '利润'} 本期 ${Review.wan(x[key + 'A'])} · 同期 ${Review.wan(x[key + 'B'])}<br>变化 ${Review.swan(v)}"/>`;
+    g += `<text x="${v >= 0 ? mid + w + 4 : mid - w - 4}" y="${y + 12}" text-anchor="${v >= 0 ? 'start' : 'end'}" font-size="10.5" fill="#1b1b1a">${Review.swan(v).replace('万', '')}</text>`; });
+  return g + `<line x1="${mid}" x2="${mid}" y1="18" y2="${H}" stroke="#9a9a94"/></svg>`;
+}
+function reviewResults(){ return REV.custs.map(c => Review.analyze(REV.cur, REV.pri, { dim: REV.dim, cust: c, month: REV.month, cumStart: REV.cumStart })); }
+function reviewTitle(){ return REV.custs.join('、') + (+REV.month.slice(5)) + '月份损益分析'; }
+function renderReview(){
+  const el = $('#review');
+  if (REV.busy){ el.innerHTML = '<div class="card">正在读取文件…</div>'; return; }
+  const dropHtml = `<div class="drop" id="rv-drop"><b>把系统导出的损益明细 Excel 拖到这里</b><div class="hint" style="margin-top:6px">或点击选择文件（.xlsx）· 文件只在这台电脑上读取，不会上传</div><input type="file" id="rv-file" accept=".xlsx" hidden></div>`;
+  if (!REV.cur){
+    el.innerHTML = `<div class="card"><h2>导入数据 <span class="sub">读取“本期”“同期”两张明细，自动生成当月 / 累计损益复盘</span></h2>${dropHtml}
+    <div class="sub-h" style="margin-top:14px">目前支持的数据类型</div>${Review.SOURCES.map((x, i) => `<div class="skuline">${i + 1}. <b>${x.name}</b>：${x.desc}</div>`).join('')}
+    <div class="hint">需要分析别的报表（如渠道结算单、费用明细），可以新增一种数据类型。</div>
+    <div class="grid2" style="margin-top:14px"><div><div class="sub-h">必需的列（缺一个就不导入）</div><div class="skuline">${Review.NEED.join('、')}，以及至少一个客户列（${Review.DIMS.join(' / ')}）</div></div>
+    <div><div class="sub-h">可选的列（缺了对应分析就不显示，不会当 0 计算）</div><div class="skuline">${Review.OPTIONAL.map(o => o[1]).join('、')}</div></div></div></div>`;
+    bindDrop(); return;
+  }
+  const c = REV.cur.check, p = REV.pri.check, months = REV.cur.months;
+  const priMiss = months.filter(m => m >= REV.cumStart && m <= REV.month).map(Review.prevYear).filter(m => !REV.pri.months.includes(m));
+  const allC = Review.values(REV.cur, REV.dim);
+  let h = `<div class="card"><h2>导入检查 <span class="sub">${esc(REV.file)} · 识别为：${esc(REV.source ? REV.source.name : '')}</span><span style="flex:1"></span><button class="btn small" id="rv-re">换一个文件</button></h2>
+  <div class="chk">
+    <span class="ok">✓</span><span>本期 ${c.rows.toLocaleString()} 行（${REV.cur.months[0]} ~ ${REV.cur.months[REV.cur.months.length - 1]}），同期 ${p.rows.toLocaleString()} 行（${REV.pri.months[0]} ~ ${REV.pri.months[REV.pri.months.length - 1]}）</span>
+    <span class="ok">✓</span><span>识别到：${c.found.join('、') || '—'}</span>
+    ${c.missing.length ? `<span class="warnc">⚠</span><span>缺少：${c.missing.join('、')}（对应分析不显示，也不参与计算）</span>` : ''}
+    ${c.balance ? (c.balance.ok ? `<span class="ok">✓</span><span>勾稽核对通过：收入 − 各项成本费用 = 净利润</span>` : `<span class="badc">✗</span><span>勾稽不平：收入 − 各项成本费用 与净利润相差 ${Review.wan(c.balance.gap)}，请检查导出的数据</span>`) : `<span class="warnc">⚠</span><span>费用列不全，无法做勾稽核对</span>`}
+    ${priMiss.length ? `<span class="warnc">⚠</span><span>同期缺少月份：${priMiss.join('、')}，这些月份的同期按 0 处理，增长率会偏高</span>` : ''}
+    <span class="hint">·</span><span class="hint">忽略了 ${c.ignored} 个与分析无关的列</span>
+  </div></div>
+  <div class="card" style="margin-top:16px"><div class="ctrl">
+    <label>客户列 <select id="rv-dim">${REV.cur.dims.map(d => `<option ${d === REV.dim ? 'selected' : ''}>${d}</option>`).join('')}</select></label>
+    <label>分析月份 <select id="rv-month">${months.map(m => `<option ${m === REV.month ? 'selected' : ''}>${m}</option>`).join('')}</select></label>
+    <label>累计从 <select id="rv-cum">${months.filter(m => m <= REV.month).map(m => `<option ${m === REV.cumStart ? 'selected' : ''}>${m}</option>`).join('')}</select> 到 ${REV.month}</label>
+    <span style="flex:1"></span>
+    <button class="btn small" id="rv-copy">复制文字</button><button class="btn small" id="rv-xmind">导出 XMind</button><button class="btn small primary" id="rv-xlsx">导出 Excel</button>
+  </div>
+  <div class="custs" style="margin-top:10px">${allC.map(v => `<label class="${REV.custs.includes(v) ? 'on' : ''}"><input type="checkbox" value="${esc(v)}" ${REV.custs.includes(v) ? 'checked' : ''}>${esc(v)}</label>`).join('')}</div></div>`;
+  const results = reviewResults();
+  results.forEach(res => {
+    h += `<div class="card" style="margin-top:16px"><h2>${esc(res.cust)} <span class="sub">${REV.month} · 累计 ${REV.cumStart} ~ ${REV.month}</span></h2><div class="rv2">`;
+    ['当月', '累计'].forEach(key => {
+      const s = res[key], e = Object.assign(Review.splitConclusions(s), ((REV.edits[res.cust] || {})[key]) || {});
+      const gr = s.rev.b > 0 ? s.rev.a / s.rev.b - 1 : null;
+      h += `<div class="rvcol"><h3>${key}${key === '累计' ? `（${s.months.length} 个月）` : ''}</h3>`;
+      if (s.empty){ h += '<div class="hint">这个范围没有数据</div></div>'; return; }
+      h += `<div class="mini"><div class="kpi"><div class="k">收入（万元）</div><div class="v">${Review.wan(s.rev.a).replace('万', '')}</div><div class="v2">同期 ${Review.wan(s.rev.b)} · ${gr === null ? '—' : `<b class="${gr >= 0 ? 'up' : 'dn'}">${Review.spc(gr)}</b>`}</div></div>
+        <div class="kpi"><div class="k">利润（万元）</div><div class="v" style="color:${s.profit.a < 0 ? 'var(--bad)' : 'inherit'}">${Review.wan(s.profit.a).replace('万', '')}</div><div class="v2">同期 ${Review.wan(s.profit.b)} · <b class="${s.profit.d >= 0 ? 'up' : 'dn'}">${Review.swan(s.profit.d)}</b></div></div></div>`;
+      h += `<div class="sub-h">产品维度</div>`;
+      if (s.hasProduct){
+        h += `<div class="mini">${divBars(s.cats, 'rev', '品类收入变化')}${divBars(s.cats, 'profit', '品类利润变化')}</div>`;
+        if (s.hasSku){ const top = (k, sg) => s.skus.filter(x => sg > 0 ? x[k] >= s.thr - 0.5 : x[k] <= -(s.thr - 0.5)).sort((a, b) => sg > 0 ? b[k] - a[k] : a[k] - b[k]).slice(0, 4).map(x => esc(x.name) + ' ' + Review.swan(x[k])).join('、') || '无';
+          h += `<div class="skuline">收入增长规格：${top('rev', 1)}<br>收入下滑规格：${top('rev', -1)}<br>利润下滑规格：${top('profit', -1)}</div>`; }
+      } else h += '<div class="hint">数据里没有“一级品类”列，品类分析不显示</div>';
+      h += `<textarea class="concl" rows="${Math.max(3, Math.ceil(e.product.length / 44))}" data-c="${esc(res.cust)}|${key}|product">${esc(e.product)}</textarea>`;
+      h += `<div class="sub-h">费用维度</div>`;
+      if (s.fees.length){
+        h += `<table class="fee"><tr><th>项目</th><th>本期</th><th>同期</th><th>差异</th></tr>`;
+        s.fees.concat(s.tp5 ? [s.tp5] : []).forEach(f => {
+          const bad = f.key === '=产品毛利额' ? f.d < 0 : f.d > 0;
+          h += `<tr><td>${f.label}</td><td>${Review.pc(f.a)}</td><td>${Review.pc(f.b)}</td><td class="${Math.abs(f.d || 0) >= 0.005 ? (bad ? 'dn' : 'up') : ''}">${Review.spc(f.d)}</td></tr>`;
+          const dr = f.key === '-CP' ? s.cpBreak.filter(x => Math.abs(x.d) >= 0.002).sort((a, b) => Math.abs(b.d) - Math.abs(a.d)).slice(0, 3) : (s.drill[f.key] && Math.abs(f.d) >= 0.01 ? s.drill[f.key].filter(x => Math.sign(x.d) === Math.sign(f.d)).slice(0, 2) : []);
+          if (dr.length) h += `<tr class="dr"><td colspan="4">└ ${dr.map(x => esc(x.name) + ' ' + Review.spc(x.d)).join('、')}</td></tr>`;
+        });
+        h += `</table>`;
+      } else h += '<div class="hint">数据里没有费用列，费用分析不显示</div>';
+      h += `<textarea class="concl" rows="${Math.max(3, Math.ceil(e.fee.length / 44))}" data-c="${esc(res.cust)}|${key}|fee">${esc(e.fee)}</textarea></div>`;
+    });
+    const g = REV.gen[res.cust] || {};
+    const skuOpts = res.当月.skus.filter(x => x.revA > 0).sort((a, b) => b.revA - a.revA);
+    h += `</div><div class="gen"><b>用实际数据生成测算方案</b> 规格 <select data-g="sku" data-cu="${esc(res.cust)}">${skuOpts.map(x => `<option ${g.sku === x.name ? 'selected' : ''}>${esc(x.name)}</option>`).join('') || '<option value="">（当月没有收入的规格）</option>'}</select>
+      数据范围 <select data-g="range" data-cu="${esc(res.cust)}"><option value="m" ${g.range !== 'c' ? 'selected' : ''}>当月 ${REV.month}</option><option value="c" ${g.range === 'c' ? 'selected' : ''}>累计</option></select>
+      单袋到手价 <input class="num" style="width:80px" data-g="price" data-cu="${esc(res.cust)}" value="${esc(g.price || '')}" placeholder="元/袋">
+      <button class="btn small primary" data-gen="${esc(res.cust)}">生成</button><span class="hint">数据里只有金额没有袋数，需要填单袋到手价来折算销量和每袋成本</span></div></div>`;
+  });
+  el.innerHTML = h;
+  // 事件
+  $('#rv-re').onclick = () => { REV.cur = null; renderReview(); };
+  $('#rv-dim').onchange = e => { REV.dim = e.target.value; REV.custs = topCusts(3); REV.edits = {}; renderReview(); };
+  $('#rv-month').onchange = e => { REV.month = e.target.value; if (REV.cumStart > REV.month || REV.cumStart.slice(0, 4) !== REV.month.slice(0, 4)) REV.cumStart = REV.cur.months.find(m => m.slice(0, 4) === REV.month.slice(0, 4)) || REV.cur.months[0]; REV.edits = {}; renderReview(); };
+  $('#rv-cum').onchange = e => { REV.cumStart = e.target.value; REV.edits = {}; renderReview(); };
+  el.querySelectorAll('.custs input').forEach(cb => cb.onchange = () => { const v = cb.value; REV.custs = cb.checked ? REV.custs.concat(v) : REV.custs.filter(x => String(x) !== v); REV.custs = allC.filter(x => REV.custs.map(String).includes(String(x))); renderReview(); });
+  el.querySelectorAll('textarea.concl').forEach(t => t.oninput = () => { const [cu, k, f] = t.dataset.c.split('|'); ((REV.edits[cu] = REV.edits[cu] || {})[k] = REV.edits[cu][k] || {})[f] = t.value; });
+  el.querySelectorAll('[data-g]').forEach(i => i.addEventListener(i.tagName === 'SELECT' ? 'change' : 'input', () => { (REV.gen[i.dataset.cu] = REV.gen[i.dataset.cu] || {})[i.dataset.g] = i.value; }));
+  el.querySelectorAll('[data-gen]').forEach(b => b.onclick = () => genScheme(b.dataset.gen));
+  const meta = () => ({ month: REV.month, cumRange: REV.cumStart + ' ~ ' + REV.month, dim: REV.dim });
+  $('#rv-xlsx').onclick = () => { if (!REV.custs.length) return alert('请先选择客户'); download(new Blob([ReviewExport.excel(reviewResults(), REV.edits, meta())], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), reviewTitle() + '.xlsx'); toast('已导出 Excel'); };
+  $('#rv-xmind').onclick = () => { if (!REV.custs.length) return alert('请先选择客户'); download(new Blob([ReviewExport.xmind(Review.tree(reviewResults(), reviewTitle(), REV.edits))], { type: 'application/octet-stream' }), reviewTitle() + '.xmind'); toast('已导出 XMind，可直接用 XMind 打开'); };
+  $('#rv-copy').onclick = () => { const t = Review.treeText(Review.tree(reviewResults(), reviewTitle(), REV.edits)); (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('已复制分析文字'), () => { prompt('复制下面的文字', t); }); };
+}
+function bindDrop(){
+  const d = $('#rv-drop'), f = $('#rv-file');
+  d.onclick = () => f.click(); f.onchange = e => e.target.files[0] && loadReviewFile(e.target.files[0]);
+  d.ondragover = e => { e.preventDefault(); d.classList.add('over'); }; d.ondragleave = () => d.classList.remove('over');
+  d.ondrop = e => { e.preventDefault(); d.classList.remove('over'); const fl = e.dataTransfer.files[0]; if (fl) loadReviewFile(fl); };
+}
+function genScheme(cust){
+  const g = REV.gen[cust] || {}, res = Review.analyze(REV.cur, REV.pri, { dim: REV.dim, cust, month: REV.month, cumStart: REV.cumStart });
+  const sku = g.sku || (res.当月.skus.filter(x => x.revA > 0).sort((a, b) => b.revA - a.revA)[0] || {}).name, price = +g.price;
+  if (!sku) return alert('当月没有可用的规格');
+  if (!(price > 0)) return alert('请填写单袋到手价（元/袋），用来把金额折算成袋数和每袋成本');
+  const months = g.range === 'c' ? REV.cur.months.filter(m => m >= REV.cumStart && m <= REV.month) : [REV.month];
+  try{
+    const sc = Review.toScheme(REV.cur, { dim: REV.dim, cust, sku, months }, price);
+    const label = g.range === 'c' ? REV.cumStart + '~' + REV.month : REV.month;
+    S.skus.push({ id: uid(), name: `${cust}·${sku}（${label}实际）`, base: scheme(sc.base), promo: scheme(JSON.parse(JSON.stringify(sc.base))), items: sc.items, metrics: [], laborAlloc: 10,
+      assumed: { purchase: false, labor: false, cold: false, loss: false }, source: { file: REV.file, cust, sku, label, price, profit: sc.expectProfit } });
+    S.active = S.skus.length - 1; S.view = 'base'; save();
+    document.querySelector('nav.tabs button[data-tab=profit]').click();
+    toast(`已生成：基准方案 = ${label} 实际数据（利润 ${yuan(sc.expectProfit)}），在促销列试算`);
+  }catch(err){ alert(err.message); }
+}
+
 /* ======================= 渲染 ======================= */
 function renderAll(full){
   const tab = document.querySelector('nav.tabs button.on').dataset.tab;
   if (tab === 'profit'){ renderChips(); renderInputs(); renderResults(); }
+  if (tab === 'review') renderReview();
   if (tab === 'labor'){ renderLaborIn(); renderLaborOut(); }
   if (tab === 'sum') renderSum();
   if (tab === 'set') renderSet();

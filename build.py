@@ -2,7 +2,7 @@
 from pathlib import Path
 root = Path(__file__).parent
 h = (root / 'src/app.html').read_text(encoding='utf-8')
-for tag, f in (('/*DEFAULTS*/', 'defaults.js'), ('/*ENGINE*/', 'engine.js'), ('/*XLSX*/', 'xlsx.js')):
+for tag, f in (('/*DEFAULTS*/', 'defaults.js'), ('/*ENGINE*/', 'engine.js'), ('/*XLSX*/', 'xlsx.js'), ('/*XLSXREAD*/', 'xlsxread.js'), ('/*REVIEW*/', 'review.js'), ('/*REVIEWEXPORT*/', 'reviewexport.js')):
     h = h.replace(tag, (root / 'src' / f).read_text(encoding='utf-8').replace('</script', '<\\/script'))
 (root / 'dist').mkdir(exist_ok=True)
 (root / 'dist/三全利润与人工测算器.html').write_text(h, encoding='utf-8')

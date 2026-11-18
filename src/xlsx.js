@@ -28,7 +28,7 @@ const XLSX = (() => {
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const colL = n => { let s = ''; n++; while (n) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; };
   // 样式编号
-  const S = { txt: 0, title: 1, head: 2, inMoney: 3, money: 4, inInt: 5, int: 6, inPct: 7, pct: 8, inTxt: 9, note: 10, keyMoney: 11, sec: 12, keyInt: 13 };
+  const S = { txt: 0, title: 1, head: 2, inMoney: 3, money: 4, inInt: 5, int: 6, inPct: 7, pct: 8, inTxt: 9, note: 10, keyMoney: 11, sec: 12, keyInt: 13, wan: 14 };
   class Sheet {
     constructor(name) { this.name = name; this.rows = {}; this.widths = []; }
     set(c, r, cell) { (this.rows[r] = this.rows[r] || {})[c] = cell; }
@@ -54,12 +54,12 @@ const XLSX = (() => {
     }
   }
   const STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-<numFmts count="3"><numFmt numFmtId="164" formatCode="&quot;¥&quot;#,##0.00;[Red]-&quot;¥&quot;#,##0.00"/><numFmt numFmtId="165" formatCode="0.0%"/><numFmt numFmtId="166" formatCode="#,##0"/></numFmts>
+<numFmts count="4"><numFmt numFmtId="167" formatCode="#,##0.0;[Red]-#,##0.0"/><numFmt numFmtId="164" formatCode="&quot;¥&quot;#,##0.00;[Red]-&quot;¥&quot;#,##0.00"/><numFmt numFmtId="165" formatCode="0.0%"/><numFmt numFmtId="166" formatCode="#,##0"/></numFmts>
 <fonts count="5"><font><sz val="11"/><name val="Microsoft YaHei"/></font><font><b/><sz val="11"/><name val="Microsoft YaHei"/></font><font><b/><sz val="14"/><name val="Microsoft YaHei"/></font><font><i/><sz val="10"/><color rgb="FF6B6B6B"/><name val="Microsoft YaHei"/></font><font><b/><sz val="11"/><color rgb="FF1C5CAB"/><name val="Microsoft YaHei"/></font></fonts>
 <fills count="5"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFF4CC"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE8EEF6"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF3F3F1"/><bgColor indexed="64"/></patternFill></fill></fills>
 <borders count="2"><border/><border><bottom style="thin"><color rgb="FF9A9A9A"/></bottom></border></borders>
 <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
-<cellXfs count="14">
+<cellXfs count="15">
 <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
 <xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>
 <xf numFmtId="0" fontId="1" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"/>
@@ -74,6 +74,7 @@ const XLSX = (() => {
 <xf numFmtId="164" fontId="4" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1"/>
 <xf numFmtId="0" fontId="1" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"/>
 <xf numFmtId="166" fontId="4" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1"/>
+<xf numFmtId="167" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
 </cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
 
   function book(sheets) {
@@ -250,6 +251,6 @@ const XLSX = (() => {
       '· 演示数据全部为假设，请替换为实际采购单、结算单数据。', '', '导出时间：' + new Date().toLocaleString('zh-CN')].forEach((t, i) => doc.set(0, i + 1, { v: t, s: i === 0 ? S.title : S.txt }));
     return book([doc, sum].concat(sheets.map(x => x.sh), [lab.sh, an]));
   }
-  return { build, zip, setNoCache: b => { NOCACHE = b; } };
+  return { build, zip, book, Sheet, S, setNoCache: b => { NOCACHE = b; } };
 })();
 if (typeof module !== 'undefined') module.exports = XLSX;

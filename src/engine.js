@@ -212,7 +212,7 @@ const Engine = (() => {
   }
 
   /* ---------- 自动分析 ---------- */
-  const fmtY = v => '¥' + Math.round(v).toLocaleString('zh-CN');
+  const fmtY = v => (v < 0 ? '-¥' : '¥') + Math.abs(Math.round(v)).toLocaleString('zh-CN');
   const fmtP = v => (v * 100).toFixed(1) + '%';
   function analyze(sku, labor, st) {
     const out = [];
